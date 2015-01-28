@@ -19,9 +19,12 @@ int main(int argc, char** argv) {
 //	waitKey(0);
 //	learn();
 	Workflow workflow;
-	string input("test/SalientRec/input/image7.jpg");
-	workflow.workflowDebug(input);
-	waitKey();
+	string input("test/workflow/input/"), border("test/workflow/border/"),
+			salient("test/workflow/salient/"),text("test/workflow/text");
+	workflow.workflowTrace(input,salient,border,text);
+//	string input("test/SalientRec/input/image7.jpg");
+//	workflow.workflowDebug(input);
+//	waitKey();
 	return 0;
 }
 

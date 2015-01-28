@@ -15,7 +15,7 @@
 #include "../preprocessing/deskew/deskew.h"
 #include "../preprocessing/binarize/binarize.h"
 #include "../preprocessing/utils/OCRUtil.h"
-#include "util/util.h"
+#include "../util/util.h"
 
 
 using namespace std;
@@ -32,7 +32,7 @@ private:
 };
 
 void Workflow::workflowTrace(string &inputFolder, string &salientFolder, string &borderFolder, string &textFolder){
-	vector<string> inputFiles = listFiles(inputFolder);
+	vector<string> inputFiles = dir(inputFolder);
 	for (unsigned i = 0, len = inputFiles.size(); i < len; ++i) {
 		string inputFile(inputFolder + inputFiles[i]), salientFile(salientFolder + inputFiles[i]),
 				borderFile(borderFolder + inputFiles[i]), textFile(textFolder + inputFiles[i]);
@@ -43,7 +43,7 @@ void Workflow::workflowTrace(string &inputFolder, string &salientFolder, string 
 		imwrite(salientFile, outputSRC);
 		int res;
 		if(src.isResultUseful(outputSRC)){
-			res = mainProc(outputSRC, 0, crossBD, outputBD);
+			res = mainProc2(input, outputSRC, 0, crossBD, outputBD);
 		}else{
 			res = mainProc(input, 0, crossBD, outputBD);
 		}

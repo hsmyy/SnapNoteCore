@@ -1351,7 +1351,7 @@ void showResult(Mat& src, Mat& cross, Mat& turned){
 }
 
 //procMode: 0, default; 1, big; 2, micro; 3, deep1
-int process(cv::Mat src, int procMode, Mat& cross, Mat& turned){
+int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 
 	//step0: to gray picture
     cv::Mat bw,bw0;
@@ -2029,7 +2029,7 @@ int process(cv::Mat src, int procMode, Mat& cross, Mat& turned){
 		//	cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
 		//}
 		std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
-		showResult(src,cross,turned);
+		showResult(src0,cross,turned);
 
 		//Size sz = Size(pic2.cols/3,pic2.rows/3);
 		//Mat pic3 = Mat(sz,CV_32S);
@@ -2048,7 +2048,20 @@ int mainProc(cv::Mat src, int procMode, Mat& cross, Mat& turned){
 	for(int run=0;run<1;run++){
 
 		modifyAttr(procMode,run);
-		int result = process(src, procMode,cross,turned);
+		int result = process(src, src, procMode,cross,turned);
+
+		if(result!=-1)
+			return result;
+	}
+	return -1;
+}
+
+int mainProc2(Mat input, cv::Mat src, int procMode, Mat& cross, Mat& turned){
+
+	for(int run=0;run<1;run++){
+
+		modifyAttr(procMode,run);
+		int result = process(input, src, procMode,cross,turned);
 
 		if(result!=-1)
 			return result;

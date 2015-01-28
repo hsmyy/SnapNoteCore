@@ -13,7 +13,7 @@
 
 using namespace std;
 
-vector<string> listFiles(string folder) {
+vector<string> dir(string folder) {
 	DIR *dir;
 	struct dirent *ent;
 	vector<string> files;
