@@ -11,6 +11,11 @@
 #include <iostream>
 #include "../salientRecognition/execute.h"
 #include "../borderPosition/border.h"
+#include "../preprocessing/GaussianSPDenoise/denoise.h"
+#include "../preprocessing/deskew/deskew.h"
+#include "../preprocessing/binarize/binarize.h"
+#include "../preprocessing/utils/OCRUtil.h"
+
 
 using namespace std;
 
@@ -33,9 +38,18 @@ void Workflow::workflow(string &inputFile){
 		res = mainProc(input, 0, crossBD, outputBD);
 	}
 
-	if(res != -1){
-		//TODO preprocess
+	if(res == -1){
+		Mat denoise, bin, deskew;
+		Denoise::saltPepperDenoise(outputBD, denoise);
+		Binarize::binarize(denoise, bin);
+		Deskew::deskew(bin, deskew);
+		Binarize::binarize(deskew, bin);
+		string text = OCRUtil::ocrFile(bin, "eng");
+		cout<<text<<endl;
 	}
+
+
+
 }
 
 void Workflow::workflowDebug(string &inputFile){
@@ -55,6 +69,15 @@ void Workflow::workflowDebug(string &inputFile){
 		imshow("crossBD", crossBD);
 		namedWindow("outputBD");
 		imshow("outputBD", outputBD);
+		waitKey(0);
+
+		Mat denoise, bin, deskew;
+		Denoise::saltPepperDenoise(outputBD, denoise);
+		Binarize::binarize(denoise, bin);
+		Deskew::deskew(bin, deskew);
+		Binarize::binarize(deskew, bin);
+		string text = OCRUtil::ocrFile(bin, "eng");
+		cout<<text<<endl;
 	}
 	else{
 		cout<<"border detection failed"<<endl;

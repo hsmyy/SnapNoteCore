@@ -17,8 +17,8 @@ int main_denoise(int argc, char *argv[]) {
 	string srcDir[] = { "gaussian", "saltPepper" };
 	string dstDir[] = { "gaussianDenoise", "saltPepperDenoise" };
 	string textDir[] = { "gaussianOrigText", "saltPepperOrigText", "gaussianDenoiseText", "saltPepperDenoiseText" };
-	Denoise::GaussianDenoise(srcDir[0], dstDir[0]);
-	Denoise::saltPepperDenoise(srcDir[1], dstDir[1]);
+	Denoise::GaussianDenoiseDir(srcDir[0], dstDir[0]);
+	Denoise::saltPepperDenoiseDir(srcDir[1], dstDir[1]);
 	OCRUtil::ocrDir(srcDir[0], textDir[0], lang);
 	OCRUtil::ocrDir(srcDir[1], textDir[1], lang);
 	OCRUtil::ocrDir(dstDir[0], textDir[2], lang);

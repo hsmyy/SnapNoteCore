@@ -53,7 +53,12 @@ public:
 
 		return dst;
 	}
-	static void GaussianDenoise(string srcDir, string dstDir,
+
+	static void GaussianDenoise(Mat& src, Mat& dst, int kernelSize = 3) {
+		GaussianBlur(src, dst, Size(kernelSize, kernelSize), 0);
+	}
+
+	static void GaussianDenoiseDir(string srcDir, string dstDir,
 			int kernelSize = 3) {
 		vector<string> files = FileUtil::getAllFiles(srcDir);
 		for (unsigned int j = 0; j < files.size(); j++) {
@@ -62,22 +67,27 @@ public:
 
 			//threshold(src, src, 128, 255, THRESH_BINARY);
 			Mat dst;
-			GaussianBlur(src, dst, Size(kernelSize, kernelSize), 0);
+			GaussianDenoise(src, dst, kernelSize);
 			imwrite(dstDir + "/" + files[j], dst);
 		}
 	}
-	static void saltPepperDenoise(string srcDir, string dstDir, int kernelSize = 3) {
+
+	static void saltPepperDenoise(Mat& src, Mat& dst, int kernelSize = 3) {
+		CV_Assert(src.type() == CV_8UC1);
+		Mat bin, spclean;
+		threshold(src, bin, 128, 255, THRESH_BINARY);
+		noiseReduction(bin, spclean);
+		GaussianBlur(spclean, dst, Size(kernelSize, kernelSize), 0);
+	}
+
+	static void saltPepperDenoiseDir(string srcDir, string dstDir,
+			int kernelSize = 3) {
 		vector<string> files = FileUtil::getAllFiles(srcDir);
 		for (unsigned int j = 0; j < files.size(); j++) {
-			cout << srcDir + "/" + files[j] << endl;
+			//cout << srcDir + "/" + files[j] << endl;
 			Mat src = imread(srcDir + "/" + files[j], IMREAD_GRAYSCALE);
-			Mat spclean, dst;
-
-			threshold(src, src, 128, 255, THRESH_BINARY);
-			noiseReduction(src, spclean);
-
-			//bilateralFilter(spclean, dst, -1, 0, 0);
-			GaussianBlur(spclean, dst, Size(kernelSize, kernelSize), 0);
+			Mat dst;
+			saltPepperDenoise(src, dst, kernelSize);
 			imwrite(dstDir + "/" + files[j], dst);
 		}
 	}

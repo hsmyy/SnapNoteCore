@@ -224,6 +224,13 @@ public:
 			}
 		}
 	}
+	static void binarize(Mat& src, Mat& dst)
+	{
+		int winx = 19;
+		int winy = 19;
+		double optK = 0.5;
+		NiblackSauvolaWolfJolion(src, dst, WOLFJOLION, winx, winy, optK, 128);
+	}
 
 };
 

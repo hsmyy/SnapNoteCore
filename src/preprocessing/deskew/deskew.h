@@ -41,7 +41,7 @@ public:
 
 		int vertN = 0;
 
-		for (int i = 0; i < lines.size(); i++) {
+		for (unsigned int i = 0; i < lines.size(); i++) {
 			Vec4i v = lines[i];
 			if (v[0] >= v[2] - 2 && v[0] <= v[2] + 2)
 				vertN++;
@@ -91,7 +91,7 @@ public:
 
 	static void deskewDir(const char* inputDir, const char* outputDir) {
 		vector<string> files = FileUtil::getAllFiles(inputDir);
-		for (int i = 0; i < files.size(); i++) {
+		for (unsigned int i = 0; i < files.size(); i++) {
 			cout << "report file :" << files[i] << endl;
 			string inputPath = string(inputDir) + "/" + files[i];
 			Mat src = imread(inputPath, IMREAD_GRAYSCALE);
