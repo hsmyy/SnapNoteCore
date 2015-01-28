@@ -105,4 +105,18 @@ template<class T> Mat convertToVisibleMat(Mat &mat){
 	return result;
 }
 
+vector<string> listFiles(string folder) {
+	DIR *dir;
+	struct dirent *ent;
+	vector<string> files;
+	if ((dir = opendir(folder.c_str())) != NULL) {
+		while ((ent = readdir(dir)) != NULL) {
+			if (strlen(ent->d_name) > 0 && ent->d_name[0] != '.') {
+				files.push_back(ent->d_name);
+			}
+		}
+	}
+	return files;
+}
+
 #endif /* MAIN_H_ */

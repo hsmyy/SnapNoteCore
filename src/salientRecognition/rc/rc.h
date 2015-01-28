@@ -21,8 +21,8 @@ class RegionContrastSalient{
 public:
 	RegionContrastSalient(double sigmaDist = 0.4, float regionWeight = 2, float distanceWeight = 0.01, bool debug = false);
 	void BuildRegions(Mat& regionIdxImage, vector<Region> &regionInfos, Mat &colorIdxImage, int colorNum);
-	void RegionContrast(const vector<Region> &regionInfos, Mat &colorInfos, Mat& regionSalientScore, int pixelNum, float theta);
-	void RegionContrast2(const vector<Region> &regionInfos, Mat &colorInfos, Mat& regionSalientScore, int pixelNum, float theta);
+	void RegionContrast(const vector<Region> &regionInfos, Mat &colorInfos, Mat& regionSalientScore, int pixelNum, float theta, Mat_<float> &cDistCache1f);
+	void RegionContrast2(const vector<Region> &regionInfos, Mat &colorInfos, Mat& regionSalientScore, int pixelNum, float theta, Mat_<float> &cDistCache1f);
 	Mat GetBorderReg(Mat &regionIdxImage, int regNum, double ratio, double thr);
 	void SmoothSaliency(Mat &colorCount1i, Mat &colorSalientScore1d, float delta, const vector<vector<CostfIdx> > &similiarMatrix);
 	void SmoothByHist(Mat &originImage3f, Mat &salientScoreImage1f, float delta);
@@ -37,7 +37,9 @@ public:
 			Mat &regionScore,
 			double sigmaDist,
 			Mat &originImage,
-			Mat regionIdxImage, bool debug= false
+			Mat regionIdxImage,
+			Mat_<float> &cDistCache1f,
+			bool debug= false
 			);
 
 	Mat originRC(
@@ -46,7 +48,9 @@ public:
 			Mat &regionScore,
 			double sigmaDist,
 			Mat &originImage3f,
-			Mat regionIdxImage, bool debug= false
+			Mat regionIdxImage,
+			Mat_<float> &cDistCache1f,
+			bool debug= false
 			);
 
 	Mat hardHC(vector<Region> regions,
@@ -64,6 +68,18 @@ private:
 	float _regionWeight;
 	float _distanceWeight;
 	bool _debug;
+	Quantizer quantizer;
+
+public:
+	float getRegionWeight(){return _regionWeight;}
+	float getDistanceWeight(){return _distanceWeight;}
+	double getSigmaDist(){return _sigmaDist;}
+	void updateRegionWeight(float updated){
+		_regionWeight += updated;
+	}
+	void updateDistanceWeight(float updated){
+		_distanceWeight += updated;
+	}
 };
 
 RegionContrastSalient::RegionContrastSalient(double sigmaDist, float regionWeight, float distanceWeight, bool debug)
@@ -120,10 +136,10 @@ Mat_<float> pairwiseColorDist(Mat &colorInfos){
 	return cDistCache1f;
 }
 
-void RegionContrastSalient::RegionContrast2(const vector<Region> &regionInfos, Mat &colorInfos, Mat& regionSalientScore, int pixelNum, float theta){
+void RegionContrastSalient::RegionContrast2(const vector<Region> &regionInfos, Mat &colorInfos, Mat& regionSalientScore, int pixelNum, float theta, Mat_<float> &cDistCache1f){
 	int i;
 	int regNum = (int)regionInfos.size();
-	Mat_<float> cDistCache1f = pairwiseColorDist(colorInfos);
+//	Mat_<float> cDistCache1f = pairwiseColorDist(colorInfos);
 
 	Mat_<double> rDistCache1d = Mat::zeros(regNum, regNum, CV_64F);
 	regionSalientScore = Mat::zeros(1, regNum, CV_64F);
@@ -147,7 +163,9 @@ void RegionContrastSalient::RegionContrast2(const vector<Region> &regionInfos, M
 	}
 }
 
-void RegionContrastSalient::RegionContrast(const vector<Region> &regionInfos, Mat &colorInfos, Mat& regionSalientScore, int pixelNum, float theta)
+void RegionContrastSalient::RegionContrast(
+		const vector<Region> &regionInfos, Mat &colorInfos, Mat& regionSalientScore, int pixelNum, float theta,
+		Mat_<float> &cDistCache1f)
 {
 	int i,len;
 	int regNum = (int)regionInfos.size();
@@ -164,7 +182,7 @@ void RegionContrastSalient::RegionContrast(const vector<Region> &regionInfos, Ma
 		cout << (mu / (float)pixelNum) << "," << (sqrt(sigma) / (float)pixelNum) << "," << regNum << endl;
 	}
 	//calculate the distance between any pair of color set.
-	Mat_<float> cDistCache1f = pairwiseColorDist(colorInfos);
+
 
 	Mat_<double> rDistCache1d = Mat::zeros(regNum, regNum, CV_64F);
 	regionSalientScore = Mat::zeros(1, regNum, CV_64F);
@@ -332,7 +350,7 @@ void RegionContrastSalient::SmoothByHist(Mat &originImage3f, Mat &salientScoreIm
 	CV_Assert(originImage3f.size() == salientScoreImage1f.size() &&
 			originImage3f.type() == CV_32FC3 && salientScoreImage1f.type() == CV_32FC1);
 	Mat colorIdxImage1i, colorInfos3f, colorCount1i;
-	int binN = Quantize(originImage3f, colorIdxImage1i, colorInfos3f, colorCount1i);
+	int binN = quantizer.Quantize(originImage3f, colorIdxImage1i, colorInfos3f, colorCount1i);
 
 	// Get initial color saliency
 	Mat colorSalientScore1d =  Mat::zeros(1, binN, CV_64FC1);
@@ -452,9 +470,9 @@ Mat RegionContrastSalient::hardHC(vector<Region> regions,
 	return sal1f;
 }
 
-Mat RegionContrastSalient::originRC(vector<Region> regions, Mat &regionColor, Mat &regionScore, double sigmaDist, Mat &originImage3f, Mat regionIdxImage, bool debug){
+Mat RegionContrastSalient::originRC(vector<Region> regions, Mat &regionColor, Mat &regionScore, double sigmaDist, Mat &originImage3f, Mat regionIdxImage, Mat_<float> &cDistCache1f, bool debug){
 	RegionContrast(regions, regionColor, regionScore,
-			originImage3f.rows * originImage3f.cols, 0);
+			originImage3f.rows * originImage3f.cols, 0, cDistCache1f);
 	int regNum = (int)regions.size();
 	Mat salientScoreImage1f = Mat::zeros(originImage3f.size(), CV_32F);
 	if(debug){
@@ -483,9 +501,9 @@ Mat RegionContrastSalient::originRC(vector<Region> regions, Mat &regionColor, Ma
 	return salientScoreImage1f;
 }
 
-Mat RegionContrastSalient::centerRC(vector<Region> regions, Mat &regionColor, Mat &regionScore, double sigmaDist, Mat &originImage, Mat regionIdxImage, bool debug){
+Mat RegionContrastSalient::centerRC(vector<Region> regions, Mat &regionColor, Mat &regionScore, double sigmaDist, Mat &originImage, Mat regionIdxImage, Mat_<float> &cDistCache1f, bool debug){
 	RegionContrast(regions, regionColor, regionScore,
-			originImage.rows * originImage.cols, 10);
+			originImage.rows * originImage.cols, 10, cDistCache1f);
 	int regNum = (int)regions.size();
 	Mat sal1f = Mat::zeros(originImage.size(), CV_32F);
 	if(debug){
@@ -528,7 +546,8 @@ Mat RegionContrastSalient::getRC(Mat &img3f, Mat &regionIdxImage1i, int regNum, 
 	//quantize
 	Mat colorIdx1i, regSal1v, tmp, color3fv;
 	img3f.convertTo(img3f, CV_32FC3, 1.0/255);
-	int QuantizeNum = Quantize(img3f, colorIdx1i, color3fv, tmp);
+
+	int QuantizeNum = quantizer.Quantize(img3f, colorIdx1i, color3fv, tmp);
 	if(QuantizeNum == 2){
 		printf("QuantizeNum == 2, %d: %s", __LINE__, __FILE__);
 		Mat sal;
@@ -547,8 +566,9 @@ Mat RegionContrastSalient::getRC(Mat &img3f, Mat &regionIdxImage1i, int regNum, 
 	vector<Region> regs(regNum);
 
 	BuildRegions(regionIdxImage1i, regs, colorIdx1i, color3fv.cols);
-	Mat centerRes = centerRC(regs, color3fv, regSal1v, sigmaDist, img3f, regionIdxImage1i, debug);
-	Mat originRes = originRC(regs, color3fv, regSal1v, sigmaDist, img3f, regionIdxImage1i, debug);
+	Mat_<float> cDistCache1f = pairwiseColorDist(color3fv);
+	Mat centerRes = centerRC(regs, color3fv, regSal1v, sigmaDist, img3f, regionIdxImage1i, cDistCache1f, debug);
+	Mat originRes = originRC(regs, color3fv, regSal1v, sigmaDist, img3f, regionIdxImage1i, cDistCache1f, debug);
 
 	if(debug){
 		namedWindow("RC-Center");

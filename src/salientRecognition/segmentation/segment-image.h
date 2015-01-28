@@ -68,7 +68,7 @@ class GraphSegmentation {
 public:
 	GraphSegmentation(float sigma = 1.2, float mergeThreshold = 200,
 			int min_size = 1000, bool debug = false);
-	int segment_image(Mat input, Mat &realSeg);
+	int segment_image(Mat &input, Mat &realSeg);
 	Mat getRealSeg();
 private:
 	rgb random_rgb();
@@ -121,7 +121,7 @@ Mat GraphSegmentation::getRealSeg() {
  * min_size: minimum component size (enforced by post-processing stage).
  * num_ccs: number of connected components in the segmentation.
  */
-int GraphSegmentation::segment_image(Mat img3f, Mat &segments) {
+int GraphSegmentation::segment_image(Mat &img3f, Mat &segments) {
 	Mat input;
 	cvtColor(img3f, input, CV_BGR2Lab);
 	Mat smoothImage;

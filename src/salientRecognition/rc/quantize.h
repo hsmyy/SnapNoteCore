@@ -22,12 +22,36 @@ using namespace std;
 
 
 
+class Quantizer{
+public:
+	/**
+	 * quantize the color of image.
+	 * Mat &img3f:
+	 */
+	int Quantize(Mat& img3f, Mat &idx1i, Mat &colorInfos3f, Mat &colorCount1i, double ratio = 0.95);
+private:
+	int getMaxColorNum(vector<pair<int, int> > &num, int rows, int cols, double ratio);
+private:
+	int clrNums[3] = {12,12,12};
+};
 
+int Quantizer::getMaxColorNum(vector<pair<int, int> > &num, int rows, int cols, double ratio){
+	int maxNum = (int)num.size();
+	int maxDropNum = cvRound(rows * cols * (1 - ratio));
+	//ignore the small part
+	for(int crnt = num[maxNum - 1].first; crnt < maxDropNum && maxNum > 1; --maxNum){
+		crnt += num[maxNum - 2].first;
+	}
+	// ignore number should larger than 10 and smaller than 256
+	maxNum = min(maxNum, 256);
+	if(maxNum <= 10){
+		maxNum = min(10, (int)num.size());
+	}
+	return maxNum;
+}
 
-int Quantize(Mat& img3f, Mat &idx1i, Mat &colorInfos3f, Mat &colorCount1i, double ratio = 0.95);
+int Quantizer::Quantize(Mat& img3f, Mat &idx1i, Mat &colorInfos3f, Mat &colorCount1i, double ratio){
 
-int Quantize(Mat& img3f, Mat &idx1i, Mat &colorInfos3f, Mat &colorCount1i, double ratio){
-	const int clrNums[3] = {12,12,12};
 	float clrTmp[3] = {clrNums[0] - 0.0001f, clrNums[1] - 0.0001f, clrNums[2] - 0.0001f};
 	int w[3] = {clrNums[1] * clrNums[2], clrNums[2], 1};
 
@@ -53,9 +77,7 @@ int Quantize(Mat& img3f, Mat &idx1i, Mat &colorInfos3f, Mat &colorCount1i, doubl
 			++pallet[idx[x]];
 		}
 	}
-
 	int maxNum = 0;
-
 	{
 		vector<pair<int, int> > num;
 		num.reserve(pallet.size());
@@ -64,23 +86,7 @@ int Quantize(Mat& img3f, Mat &idx1i, Mat &colorInfos3f, Mat &colorCount1i, doubl
 			num.push_back(pair<int, int>(it->second, it->first));
 		}
 		sort(num.begin(), num.end(), std::greater<pair<int, int> >());
-		//debug
-//		for(int i = 0; i < num.size(); ++i){
-//			cout << num[i].first << "," << num[i].second << endl;
-//		}
-
-		maxNum = (int)num.size();
-		int maxDropNum = cvRound(rows * cols * (1 - ratio));
-		//ignore the small part
-		for(int crnt = num[maxNum - 1].first; crnt < maxDropNum && maxNum > 1; --maxNum){
-			crnt += num[maxNum - 2].first;
-		}
-		// ignore number should larger than 10 and smaller than 256
-		maxNum = min(maxNum, 256);
-		if(maxNum <= 10){
-			maxNum = min(10, (int)num.size());
-		}
-
+		maxNum = getMaxColorNum(num, rows, cols, ratio);
 		pallet.clear();
 		// pallet stores <hashkey, idx> and idx is in the desc order.
 		// the less the idx, the higher the number.
@@ -109,8 +115,6 @@ int Quantize(Mat& img3f, Mat &idx1i, Mat &colorInfos3f, Mat &colorCount1i, doubl
 			}
 			pallet[num[i].second] = pallet[num[simIdx].second];
 		}
-
-
 	}
 
 	colorInfos3f = Mat::zeros(1, maxNum, CV_32FC3);

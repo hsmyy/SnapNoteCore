@@ -6,6 +6,7 @@
  */
 
 #include "salientRecognition/execute.h"
+#include "salientRecognition/rc/rcLearning.h"
 
 using namespace cv;
 using namespace std;
@@ -13,8 +14,9 @@ using namespace std;
 int main(int argc, char** argv) {
 //	salientDebug("test/input/imaget3.png");
 //	salient("test/input/book3.jpg","test/seg/book3.jpg","test/output/book3.jpg");
-	wholeTest();
-	waitKey(0);
+//	wholeTest();
+//	waitKey(0);
+	learn();
 	return 0;
 }
 
