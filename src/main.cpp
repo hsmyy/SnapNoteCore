@@ -5,8 +5,9 @@
  *      Author: fc
  */
 
-#include "salientRecognition/execute.h"
-#include "salientRecognition/rc/rcLearning.h"
+//#include "salientRecognition/execute.h"
+//#include "salientRecognition/rc/rcLearning.h"
+#include "workflow/workflow.h"
 
 using namespace cv;
 using namespace std;
@@ -16,7 +17,11 @@ int main(int argc, char** argv) {
 //	salient("test/input/book3.jpg","test/seg/book3.jpg","test/output/book3.jpg");
 //	wholeTest();
 //	waitKey(0);
-	learn();
+//	learn();
+	Workflow workflow;
+	string input("test/SalientRec/input/imagec.jpg");
+	workflow.workflowDebug(input);
+	waitKey();
 	return 0;
 }
 

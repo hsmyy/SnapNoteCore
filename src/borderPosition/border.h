@@ -1444,7 +1444,7 @@ int process(cv::Mat src, int procMode, Mat& cross, Mat& turned){
 				fakes++;
 			}
 
-/*  if(fabs(line->angle-CV_PI/2)<CV_PI/6){
+/*  //if(fabs(line->angle-CV_PI/2)<CV_PI/6){
 			cv::line( pic11, pt1, pt2, CV_RGB(255,255,255),6);
 
 			std::cout<<"LINE "<<i<<": "<<line->score<<" "<<line->rho<<" "<<line->angle<<std::endl;
@@ -1455,7 +1455,7 @@ int process(cv::Mat src, int procMode, Mat& cross, Mat& turned){
 			cv::imshow("image", pic3);
 			//cv::imshow("image", pic11);
 			cv::waitKey();
-		}
+		//}
 */
 
 		}
@@ -2045,7 +2045,7 @@ int process(cv::Mat src, int procMode, Mat& cross, Mat& turned){
 //procMode: 0, default; 1, big; 2, micro; 3, deep1
 int mainProc(cv::Mat src, int procMode, Mat& cross, Mat& turned){
 
-	for(int run=0;run<RUN[procMode];run++){
+	for(int run=0;run<1;run++){
 
 		modifyAttr(procMode,run);
 		int result = process(src, procMode,cross,turned);
@@ -2053,6 +2053,7 @@ int mainProc(cv::Mat src, int procMode, Mat& cross, Mat& turned){
 		if(result!=-1)
 			return result;
 	}
+	//return -1;
 }
 
 void getCountHistoGram(Mat& src){
