@@ -111,7 +111,7 @@ public:
 	 **********************************************************/
 	static void NiblackSauvolaWolfJolion(Mat& im, Mat& output,
 			NiblackVersion version, int winx, int winy, double k, double dR) {
-
+		output.create(im.size(), im.type());
 		double m, s, max_s;
 		double th = 0;
 		double min_I, max_I;

@@ -15,6 +15,7 @@
 #include "../preprocessing/deskew/deskew.h"
 #include "../preprocessing/binarize/binarize.h"
 #include "../preprocessing/utils/OCRUtil.h"
+#include "util/util.h"
 
 
 using namespace std;
@@ -25,12 +26,38 @@ public:
 	void workflowDebug(string &inputFile);
 	void workflowTrace(string &inputFolder,
 			string &salientFolder,
-			string &borderFolder);
+			string &borderFolder,
+			string &textFolder);
 private:
 };
 
-void Workflow::workflowTrace(string &inputFile,		string &salientFolder,		string &borderFolder){
-	Mat input = imread(inputFile);
+void Workflow::workflowTrace(string &inputFolder, string &salientFolder, string &borderFolder, string &textFolder){
+	vector<string> inputFiles = listFiles(inputFolder);
+	for (unsigned i = 0, len = inputFiles.size(); i < len; ++i) {
+		string inputFile(inputFolder + inputFiles[i]), salientFile(salientFolder + inputFiles[i]),
+				borderFile(borderFolder + inputFiles[i]), textFile(textFolder + inputFiles[i]);
+		Mat input = imread(inputFile);
+		SalientRec src;
+		Mat outputSRC, crossBD, outputBD;
+		src.salient(input, outputSRC);
+		imwrite(salientFile, outputSRC);
+		int res;
+		if(src.isResultUseful(outputSRC)){
+			res = mainProc(outputSRC, 0, crossBD, outputBD);
+		}else{
+			res = mainProc(input, 0, crossBD, outputBD);
+		}
+		if(res == -1){
+			imwrite(borderFile, crossBD);
+			Mat denoise, bin, deskew;
+			Denoise::saltPepperDenoise(outputBD, denoise);
+			Binarize::binarize(denoise, bin);
+			Deskew::deskew(bin, deskew);
+			Binarize::binarize(deskew, bin);
+			string text = OCRUtil::ocrFile(bin, "eng");
+			saveToFile(textFile, text);
+		}
+	}
 }
 
 void Workflow::workflow(string &inputFile){
@@ -54,29 +81,25 @@ void Workflow::workflow(string &inputFile){
 		string text = OCRUtil::ocrFile(bin, "eng");
 		cout<<text<<endl;
 	}
-
-
-
 }
 
 void Workflow::workflowDebug(string &inputFile){
 	Mat input = imread(inputFile);
 	SalientRec src;
 	Mat outputSRC, crossBD, outputBD;
-	src.salientDebug(input, outputSRC);
+//	src.salientDebug(input, outputSRC);
 	int res;
-	if(src.isResultUseful(outputSRC)){
-		res = mainProc(outputSRC, 0, crossBD, outputBD);
-	}else{
+//	if(src.isResultUseful(outputSRC)){
+//		res = mainProc(outputSRC, 0, crossBD, outputBD);
+//	}else{
 		res = mainProc(input, 0, crossBD, outputBD);
-	}
+//	}
 	if(res != -1){
 		//TODO preprocess
 		namedWindow("crossBD");
 		imshow("crossBD", crossBD);
 		namedWindow("outputBD");
 		imshow("outputBD", outputBD);
-		waitKey(0);
 
 		Mat denoise, bin, deskew;
 		Denoise::saltPepperDenoise(outputBD, denoise);

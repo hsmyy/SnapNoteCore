@@ -73,6 +73,7 @@ public:
 	}
 
 	static void saltPepperDenoise(Mat& src, Mat& dst, int kernelSize = 3) {
+		cvtColor(src, src, COLOR_BGR2GRAY);
 		CV_Assert(src.type() == CV_8UC1);
 		Mat bin, spclean;
 		threshold(src, bin, 128, 255, THRESH_BINARY);

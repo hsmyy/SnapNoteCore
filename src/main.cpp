@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
 //	waitKey(0);
 //	learn();
 	Workflow workflow;
-	string input("test/SalientRec/input/imagea.png");
+	string input("test/SalientRec/input/image7.jpg");
 	workflow.workflowDebug(input);
 	waitKey();
 	return 0;
