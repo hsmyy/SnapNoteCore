@@ -11,6 +11,7 @@
 #include <iostream>
 #include "main.h"
 #include "rc.h"
+#include "quantize.h"
 #include "../segmentation/segment-image.h"
 
 using namespace std;
@@ -112,6 +113,8 @@ void rcLearning::learningToRank(string &inputFolder, string &outputFolder){
 //	vector<string> outputFiles = listFiles(outputFolder.c_str());
 	//train times
 	for(int times = 0; times < 50; ++times){
+		correctNum = 0;
+		testNum = 0;
 		for(unsigned int i = 0, len = inputFiles.size(); i < len; ++i){
 			size_t idx = inputFiles[i].find_last_of('.');
 			if(idx != string::npos){
@@ -152,7 +155,7 @@ void rcLearning::splitSalientGroups(Mat &seg, Mat &output, int segNum, vector<in
 		int *segRow = seg.ptr<int>(y);
 		Vec3b *outputRow = seg.ptr<Vec3b>(y);
 		for(int x = 0; x < output.cols; ++x, ++segRow, ++outputRow){
-			if((*outputRow)[0] == 255 && (*outputRow)[1] == 255 && (*outputRow)[2] == 255){
+			if(outputRow->val[0] > 0 || outputRow->val[1] > 0 || outputRow->val[2] > 0){
 				segInfos[*segRow].first += 1;
 			}else{
 				segInfos[*segRow].second += 1;
@@ -162,7 +165,7 @@ void rcLearning::splitSalientGroups(Mat &seg, Mat &output, int segNum, vector<in
 	for(unsigned i = 0, len = segInfos.size(); i < len; ++i){
 		pair<int, int> *curPair = &segInfos[i];
 		float sumPixel = curPair->first + curPair->second;
-		if(curPair->first / sumPixel > 0.8){
+		if(curPair->first / sumPixel > 0.6){
 			salientIdices.push_back(i);
 		}else{
 			nonSalientIdices.push_back(i);

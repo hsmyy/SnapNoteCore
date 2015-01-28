@@ -9,6 +9,7 @@
 #define MAIN_H_
 
 #include <opencv2/opencv.hpp>
+#include <dirent.h>
 
 #define THRESHOLD(size, c) (c/size)
 

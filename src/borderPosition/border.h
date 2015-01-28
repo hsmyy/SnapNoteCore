@@ -1513,7 +1513,7 @@ int process(cv::Mat src, int procMode, Mat& cross, Mat& turned){
 			/*if((dangle>=CV_PI*7.0/9.0&&dangle<=CV_PI*11.0/9.0||
 								dangle<=CV_PI*2.0/9.0&&(rho1/(cos(theta1)+height*sin(theta1)/width)-0.5*width)*(rho2/(cos(theta2)+height*sin(theta2)/width)-0.5*width)<0)
 								&&drho>0.2*width&&drho>0.2*height)*/
-			//OPPOANG = 0.25;
+			OPPOANG = 0.25;
 			if((dangle>=CV_PI*(1.0-OPPOANG)&&dangle<=CV_PI*(OPPOANG+1.0)&&(drho=l1->rho+l2->rho)||
 				(dangle<=CV_PI*OPPOANG||(dangle>=(2.0-OPPOANG)*CV_PI&&dangle<=2.0*CV_PI))&&(rho1/(cos(theta1)+height*sin(theta1)/width)-0.5*width)*(rho2/(cos(theta2)+height*sin(theta2)/width)-0.5*width)<0)
 				&&(drho>0.02*width&&drho>0.02*height)){
@@ -2053,7 +2053,7 @@ int mainProc(cv::Mat src, int procMode, Mat& cross, Mat& turned){
 		if(result!=-1)
 			return result;
 	}
-	//return -1;
+	return -1;
 }
 
 void getCountHistoGram(Mat& src){

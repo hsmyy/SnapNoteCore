@@ -81,8 +81,8 @@ void RegionCut::modifyRegion(Mat &img1f, Mat &flag, vector<ConnectRegion> &regio
 				}
 			}
 		}
-		namedWindow("main region");
-		imshow("main region", highlight);
+//		namedWindow("main region");
+//		imshow("main region", highlight);
 	}
 	// if the region is larger than 15%, remove other region, other remove all
 	if(max > 0.15){
@@ -119,8 +119,8 @@ Mat RegionCut::findMainBorder(Mat &img1f){
 				}
 			}
 		}
-		namedWindow("broadSearch");
-		imshow("broadSearch", showRegion);
+//		namedWindow("broadSearch");
+//		imshow("broadSearch", showRegion);
 
 	}
 	for(int y = 1; y < img1f.rows; ++y){
@@ -137,8 +137,8 @@ Mat RegionCut::findMainBorder(Mat &img1f){
 				}
 			}
 		}
-		namedWindow("broadSearch2");
-		imshow("broadSearch2", showRegion);
+//		namedWindow("broadSearch2");
+//		imshow("broadSearch2", showRegion);
 	}
 
 	//fill in color
@@ -262,8 +262,8 @@ void RegionCut::findConnectedRegion(Mat &img1f, Mat &flag, vector<ConnectRegion>
 				}
 			}
 		}
-		namedWindow("ContinousRegion");
-		imshow("ContinousRegion", color);
+//		namedWindow("ContinousRegion");
+//		imshow("ContinousRegion", color);
 	}
 }
 

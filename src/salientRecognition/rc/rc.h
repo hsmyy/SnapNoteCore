@@ -17,6 +17,8 @@
 #include <iostream>
 #include <cmath>
 
+#include "quantize.h"
+
 class RegionContrastSalient{
 public:
 	RegionContrastSalient(double sigmaDist = 0.4, float regionWeight = 2, float distanceWeight = 0.01, bool debug = false);

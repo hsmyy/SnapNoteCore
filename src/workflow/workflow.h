@@ -23,8 +23,15 @@ class Workflow{
 public:
 	void workflow(string &inputFile);
 	void workflowDebug(string &inputFile);
+	void workflowTrace(string &inputFolder,
+			string &salientFolder,
+			string &borderFolder);
 private:
 };
+
+void Workflow::workflowTrace(string &inputFile,		string &salientFolder,		string &borderFolder){
+	Mat input = imread(inputFile);
+}
 
 void Workflow::workflow(string &inputFile){
 	Mat input = imread(inputFile);
