@@ -387,7 +387,7 @@ double diancheng(double* v1, double* v2, int c){
 	double ret = 0.0;
 	for(int i=0;i<c;i++)
 		ret+=v1[i]*v2[i];
-	std::cout<<"diancheng "<<ret<<std::endl;
+	//std::cout<<"diancheng "<<ret<<std::endl;
 	return ret;
 }
 
@@ -395,7 +395,7 @@ void chacheng(double* v1, double* v2, double* dist, int c){
 	dist[0] = (v1[1]*v2[2]-v1[2]*v2[1]);
 	dist[1] = (v1[2]*v2[0]-v1[0]*v2[2]);
 	dist[2] = (v1[0]*v2[1]-v1[1]*v2[0]);
-	std::cout<<"chacheng: "<<dist[0]<<", "<<dist[1]<<", "<<dist[2]<<std::endl;
+	//std::cout<<"chacheng: "<<dist[0]<<", "<<dist[1]<<", "<<dist[2]<<std::endl;
 }
 
 void pointToVecP(cv::Point2f pt, double* v3){
@@ -862,12 +862,12 @@ bool isLine(cv::Mat& mat, double& linkScore, double& linkSpace, cv::Point pt1, c
 	maxTb=max(maxTb,tb);
 	//cout<<"grad "<<maxLr<<" "<<maxTb<<endl;
 	if(procMode==3&&mode==1&&maxLr<11&&maxTb<7){
-		if (debug) cout<<"false0"<<endl;
+		//if (debug) cout<<"false0"<<endl;
 		return false;
 	}
 	if (mode<=2&&maxLink >= MAXLINK)
 	{
-		if (debug) std::cout<<"true1 "<<maxLink<<std::endl;
+		//if (debug) std::cout<<"true1 "<<maxLink<<std::endl;
 		linkScore = maxLink;
 		linkSpace = maxSpace;
 		if(linkSpace==0) linkSpace=1;
@@ -875,10 +875,10 @@ bool isLine(cv::Mat& mat, double& linkScore, double& linkSpace, cv::Point pt1, c
 	}
 	if (maxSpace >= threshhold)
 	{
-		if (debug) std::cout<<"false1 "<<maxSpace<<" "<<maxLink<<" "<<threshhold<<std::endl;
+		//if (debug) std::cout<<"false1 "<<maxSpace<<" "<<maxLink<<" "<<threshhold<<std::endl;
 		return false;
 	}
-	if (debug) std::cout<<"true2 "<<maxSpace<<" "<<maxLink<<std::endl;
+	//if (debug) std::cout<<"true2 "<<maxSpace<<" "<<maxLink<<std::endl;
 	linkScore = maxLink;
 	return true;
 }
@@ -1007,7 +1007,7 @@ bool isRealQuadr(cv::Mat pic, cv::Vec4i xylines[], int thresh, int size, int pro
 
 	score = (dd1+dd2+dd3+dd4)/(dx1+dx2+dx3+dx4);
 	if(debug) cout<<(dd1+dd2+dd3+dd4)<<" "<<(dx1+dx2+dx3+dx4)<<endl;
-	std::cout<<"true quadr"<<std::endl;
+	//std::cout<<"true quadr"<<std::endl;
 	return true;
 }
 
@@ -1198,7 +1198,7 @@ void drawInnerBorder(Mat& src, double k, int x0, int y0){
 void showResult(Mat& src, Mat& cross, Mat& turned){
 	//output it
 	std::vector<cv::Point2f> corners;
-	cout<<"size "<<src.cols<<" "<<src.rows<<endl;
+	//cout<<"size "<<src.cols<<" "<<src.rows<<endl;
 	for (int i = 0; i < finalines.size(); i++)
 	{
 		for (int j = i+1; j < finalines.size(); j++)
@@ -1235,9 +1235,9 @@ void showResult(Mat& src, Mat& cross, Mat& turned){
 	center *= (1. / corners.size());
 
 	sortCorners(corners, center);
-	cout<<"center "<<center.x<<" "<<center.y<<endl;
+	//cout<<"center "<<center.x<<" "<<center.y<<endl;
 	for(int i=0;i<4;i++){
-		cout<<"corner "<<corners[i].x<<" "<<corners[i].y<<endl;
+		//cout<<"corner "<<corners[i].x<<" "<<corners[i].y<<endl;
 	}
 	if (corners.size() == 0){
 		std::cout << "The corners were not sorted correctly!" << std::endl;
@@ -1284,36 +1284,38 @@ void showResult(Mat& src, Mat& cross, Mat& turned){
 	pointToVecP(corners[1],mp4);
 
 	double cha14[3],cha24[3],cha34[3];
-	cout<<"mp1: "<<mp1[0]<<", "<<mp1[1]<<", "<<mp1[2]<<endl;
-	cout<<"mp2: "<<mp2[0]<<", "<<mp2[1]<<", "<<mp2[2]<<endl;
-	cout<<"mp3: "<<mp3[0]<<", "<<mp3[1]<<", "<<mp3[2]<<endl;
-	cout<<"mp4: "<<mp4[0]<<", "<<mp4[1]<<", "<<mp4[2]<<endl;
+	//cout<<"mp1: "<<mp1[0]<<", "<<mp1[1]<<", "<<mp1[2]<<endl;
+	//cout<<"mp2: "<<mp2[0]<<", "<<mp2[1]<<", "<<mp2[2]<<endl;
+	//cout<<"mp3: "<<mp3[0]<<", "<<mp3[1]<<", "<<mp3[2]<<endl;
+	//cout<<"mp4: "<<mp4[0]<<", "<<mp4[1]<<", "<<mp4[2]<<endl;
 	chacheng(mp1,mp4,cha14,3);
 	chacheng(mp2,mp4,cha24,3);
 	chacheng(mp3,mp4,cha34,3);
 	double k2 = diancheng(cha14,mp3,3)/diancheng(cha24,mp3,3);
 	double k3 = diancheng(cha14,mp2,3)/diancheng(cha34,mp2,3);
 
-	std::cout<<"k2k3 "<<k2<<" "<<k3<<std::endl;
+	//std::cout<<"k2k3 "<<k2<<" "<<k3<<std::endl;
 	double n2[3],n3[3];
 	for(int i=0;i<3;i++){
 		n2[i] = k2*mp2[i]-mp1[i];
 		n3[i] = k3*mp3[i]-mp1[i];
 	}
-	cout<<"n2: ";
+	/*
+	//cout<<"n2: ";
 	for(int i=0;i<3;i++)
-		cout<<n2[i]<<",";
-	cout<<endl;
-	cout<<"n3: ";
+		//cout<<n2[i]<<",";
+	//cout<<endl;
+	//cout<<"n3: ";
 	for(int i=0;i<3;i++)
-		cout<<n3[i]<<",";
-	cout<<endl;
+		//cout<<n3[i]<<",";
+	//cout<<endl;
+	 * */
 	double fk1 = -(1.0/(n2[2]*n3[2]));
 	double fk2 = n2[0]*n3[0]-(n2[0]*n3[2]+n2[2]*n3[0])*u0+n2[2]*n3[2]*u0*u0;
 	double fk3 = n2[1]*n3[1]-(n2[1]*n3[2]+n2[2]*n3[1])*v0+n2[2]*n3[2]*v0*v0;
 	double f2 = fk1*(fk2+fk3);
 
-	std::cout<<"f2 "<<f2<<std::endl;
+	//std::cout<<"f2 "<<f2<<std::endl;
 
 	double bl1 = (n2[0]-n2[2]*u0)*n2[0]+(n2[1]-n2[2]*v0)*n2[1]+(u0*u0+v0*v0+f2)*n2[2]*n2[2]-(u0*n2[0]+v0*n2[1])*n2[2];
 	double bl2 = (n3[0]-n3[2]*u0)*n3[0]+(n3[1]-n3[2]*v0)*n3[1]+(u0*u0+v0*v0+f2)*n3[2]*n3[2]-(u0*n3[0]+v0*n3[1])*n3[2];
@@ -1333,7 +1335,7 @@ void showResult(Mat& src, Mat& cross, Mat& turned){
 	if(bl>3||bl<0.3)
 		bl = bl0;
 
-	std::cout<<"bl0 "<<bl0<<",bl1 "<<bl1<<",bl2 "<<bl2<<",bl "<<bl<<std::endl;
+	//std::cout<<"bl0 "<<bl0<<",bl1 "<<bl1<<",bl2 "<<bl2<<",bl "<<bl<<std::endl;
 
 	int width = src.cols>bl*src.rows?src.cols:bl*src.rows;
 	int height = (int)(width/bl);
@@ -1421,7 +1423,7 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 	int fakes = 0;
 	for( ; i < lines->total; i++ )
 	{
-		std::cout<<i<<" of "<<lines->total<<std::endl;
+		//std::cout<<i<<" of "<<lines->total<<std::endl;
 		CvLinePolar2* line = (CvLinePolar2*)cvGetSeqElem(lines,lineSorted[i]);
 
 		if((procMode==1&&i<31)||line->votes*VOTERATE>((CvLinePolar2*)cvGetSeqElem(lines,0))->votes){
@@ -1447,7 +1449,7 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 			*/
 			///
 			fakeLines[i] = 1;
-			std::cout<<"test line "<<fakeLines[i]<<std::endl;
+			//std::cout<<"test line "<<fakeLines[i]<<std::endl;
 			if(fakeLines[i]==1&&(procMode==3&&(notRectLineLv2(line->angle,line->rho)||!isBlackBorder(pic11,pt1, pt2, 17*3-2, 11*3-2, 1,i)))){
 				fakeLines[i]=0;
 				fakes++;
@@ -1506,14 +1508,14 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 				drho=fabs(l1->rho-l2->rho);
 			double rho1 = l1->rho, rho2 = l2->rho;
 			double theta1 = l1->angle, theta2 = l2->angle;
-/**/
+/*
 			if(i==5&&j==8){
 				cout<<"l1 "<<l1->angle<<" "<<l1->rho<<endl;
 				cout<<"l2 "<<l2->angle<<" "<<l2->rho<<endl;
 				std::cout<<"why not oppsite "<<lineSorted[i]<<" "<<lineSorted[j]<<" "<<dangle<<" "<<drho<<" "<<width<<" "<<height<<" "
 						<<(rho1/(cos(theta1)+height*sin(theta1)/width)-0.5*width)*(rho2/(cos(theta2)+height*sin(theta2)/width)-0.5*width)<<std::endl;
 			}
-
+*/
 
 			/*if((dangle>=CV_PI*5.0/6.0&&dangle<=CV_PI*7.0/6.0||
 					dangle<=CV_PI*1.0/6.0&&(rho1/(cos(theta1)+height*sin(theta1)/width)-0.5*width)*(rho2/(cos(theta2)+height*sin(theta2)/width)-0.5*width)<0)
@@ -1641,7 +1643,7 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 
 		for(int l=max(k+1,lStart);l<vecsize2&&l<opplineVector.size();l++){
 
-			cout<<"KL: "<<k<<" "<<l<<endl;
+			//cout<<"KL: "<<k<<" "<<l<<endl;
 			if(finalK<0&&finalL<0&&l==vecsize2-1&&k==vecsize1-2){
 				cout<<"BIGBIG"<<endl;
 				lStart = vecsize2;
@@ -1683,8 +1685,8 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 
 			}
 */
-			if(k==0&&l==12)
-				cout<<"here1"<<endl;
+//			if(k==0&&l==12)
+//				cout<<"here1"<<endl;
 
 			int padding = 10.0;
 			cv::Point2f pt[4];
@@ -1744,8 +1746,8 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 			if(!pass1)
 				continue;
 
-			if(k==0&&l==12)
-				cout<<"here2"<<endl;
+//			if(k==0&&l==12)
+//				cout<<"here2"<<endl;
 
 			double lnab = dist(pt[0],pt[1]);
 			double lnbd = dist(pt[1],pt[3]);
@@ -1828,14 +1830,14 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 					minDistToM = distToM;
 					maxScore=score;
 				}
-
+/*
 				if((k==11&&l==20||k==32&&l==251||k==38&&l==49))
 				{
 					cout<<"rhos "<<rho0<<" "<<rho1<<" "<<rho2<<" "<<rho3<<endl;
 					cout<<"angles "<<clines[0]->angle<<" "<<clines[1]->angle<<" "<<clines[2]->angle<<" "<<clines[3]->angle<<endl;
 					cout<<"thetas "<<theta0<<" "<<theta1<<" "<<theta2<<" "<<theta3<<endl;
 					std::cout<<maxScore<<" "<<score<<" "<<angleSum<<" "<<distToM<<" "<<circ<<" "<<k<<" "<<l<<" "<<finalK<<" "<<finalL<<std::endl;
-/*              //Quadrangle quad;
+              //Quadrangle quad;
 				//quad.a = pt[0];
 				//quad.b = pt[1];
 				//quad.c = pt[2];
@@ -1935,8 +1937,8 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 //				cv::imshow("imageComp", pic3);
 				cv::imshow("imageComp", pic2);
 				cv::waitKey();
-*/
-				}
+
+				}*/
 			}
 		}
 	}
@@ -1965,7 +1967,7 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 		//	pt2.y = pic2.rows;
 		//	cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
 		//}
-		std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
+		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
 		//imshow("imageF", pic2);
 		//waitKey();
 
@@ -1989,7 +1991,7 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 		//	pt2.y = pic2.rows;
 		//	cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
 		//}
-		std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
+		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
 		//imshow("imageF", pic2);
 		//waitKey();
 
@@ -2013,7 +2015,7 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 		//	pt2.y = pic2.rows;
 		//	cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
 		//}
-		std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
+		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
 		//imshow("imageF", pic2);
 		//waitKey();
 
@@ -2037,7 +2039,7 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 		//	pt2.y = pic2.rows;
 		//	cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
 		//}
-		std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
+		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
 		showResult(src0,cross,turned);
 
 		//Size sz = Size(pic2.cols/3,pic2.rows/3);

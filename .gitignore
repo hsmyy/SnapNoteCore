@@ -38,3 +38,4 @@ local.properties
 
 #
 src/main.cpp
+test/workflow/border/
