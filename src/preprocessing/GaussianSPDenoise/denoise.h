@@ -18,7 +18,7 @@ class Denoise {
 public:
 	static Mat noiseReduction(Mat& img, Mat& dst, int block = 3) //block=5 is our threshold for blob size. Less than that is noise
 			{
-		CV_Assert(img.type() == CV_8UC1);
+		CV_Assert(img.channels() == 1);
 		dst.create(img.rows, img.cols, img.type());
 		int i, j, m, n, r = img.rows, c = img.cols, white, black;
 
@@ -74,7 +74,7 @@ public:
 
 	static void saltPepperDenoise(Mat& src, Mat& dst, int kernelSize = 3) {
 		cvtColor(src, src, COLOR_BGR2GRAY);
-		CV_Assert(src.type() == CV_8UC1);
+		CV_Assert(src.channels() == 1);
 		Mat bin, spclean;
 		threshold(src, bin, 128, 255, THRESH_BINARY);
 		noiseReduction(bin, spclean);

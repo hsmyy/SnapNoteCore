@@ -47,7 +47,7 @@ void Workflow::workflowTrace(string &inputFolder, string &salientFolder, string 
 		}else{
 			res = mainProc(input, 0, crossBD, outputBD);
 		}
-		if(res == -1){
+		if(res != -1){
 			imwrite(borderFile, crossBD);
 			Mat denoise, bin, deskew;
 			Denoise::saltPepperDenoise(outputBD, denoise);

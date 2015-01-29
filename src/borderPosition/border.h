@@ -1223,6 +1223,9 @@ void showResult(Mat& src, Mat& cross, Mat& turned){
 	if (approx.size() != 4)
 	{
 		std::cout << "The object is not quadrilateral!" << std::endl;
+		cv::Mat quad = cv::Mat::zeros(src.rows, src.cols, CV_8UC3);
+		cross = src.clone();
+		turned = quad.clone();
 		return;
 	}
 
@@ -1238,6 +1241,9 @@ void showResult(Mat& src, Mat& cross, Mat& turned){
 	}
 	if (corners.size() == 0){
 		std::cout << "The corners were not sorted correctly!" << std::endl;
+		cv::Mat quad = cv::Mat::zeros(src.rows, src.cols, CV_8UC3);
+		cross = src.clone();
+		turned = quad.clone();
 		return;
 	}
 
@@ -1354,6 +1360,9 @@ void showResult(Mat& src, Mat& cross, Mat& turned){
 int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 
 	//step0: to gray picture
+	cross = Mat::zeros(src0.rows,src0.cols,CV_8UC1);
+	turned = Mat::zeros(src0.rows,src0.cols,CV_8UC1);
+
     cv::Mat bw,bw0;
 
 	cv::cvtColor(src, bw, CV_BGR2GRAY);

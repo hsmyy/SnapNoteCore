@@ -9,7 +9,10 @@
 #define SRC_ADDNOISE_H_
 
 #include <opencv2/opencv.hpp>
+#include <stdlib.h>
+#include <stdio.h>
 
+using namespace std;
 using namespace cv;
 
 class AddNoise {
@@ -68,7 +71,8 @@ public:
 		addWeighted(src, alpha, noise, beta, 0, dst);
 		return dst;
 	}
-	static Mat addSaltPepperNoise(Mat&src, Mat& dst, int low_threshold, int high_threshold) {
+	static Mat addSaltPepperNoise(Mat&src, Mat& dst, int low_threshold,
+			int high_threshold) {
 		CV_Assert(src.type() == CV_8UC1);
 		Mat saltpepper_noise = Mat::zeros(src.rows, src.cols, src.type());
 
@@ -81,6 +85,34 @@ public:
 		dst.setTo(255, white);
 		dst.setTo(0, black);
 		return dst;
+	}
+	static Mat rotateRandomAngle(Mat& src, Mat& dst, RNG& rng) {
+		//dst.create(src.size(), src.type());
+		Point center = Point(src.cols / 2, src.rows / 2);
+		double angle = rng.uniform(-45, 45);
+		Mat rot_mat;
+		//angle = angle * 180 / M_PI;
+
+		rot_mat = getRotationMatrix2D(center, angle, 1.0);
+		warpAffine(src, dst, rot_mat, dst.size());
+		return dst;
+	}
+	static void rotateRangeAngle(Mat& src, string outputDir, string prefix, int lower_angle = -45,
+			int upper_angle = 45, int step = 1) {
+		CV_Assert(lower_angle <= upper_angle && step > 0);
+		Point center = Point(src.cols / 2, src.rows / 2);
+		for (int angle = lower_angle; angle <= upper_angle; angle += step) {
+			Mat rot_mat, dst;
+			rot_mat = getRotationMatrix2D(center, angle, 1.0);
+			warpAffine(src, dst, rot_mat, src.size(), 1, 0, Scalar(255));
+			char filename[100];
+			sprintf(filename, "%d", angle);
+			string outputPath = outputDir + "/" + prefix + filename + ".jpg";
+			//cout<<outputPath<<endl;
+			imwrite(outputPath, dst);
+		}
+
+
 	}
 };
 
