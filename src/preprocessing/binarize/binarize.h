@@ -227,6 +227,7 @@ public:
 	}
 	static void binarize(Mat& src, Mat& dst)
 	{
+		CV_Assert(src.channels() == 1);
 		int winx = 19;
 		int winy = 19;
 		double optK = 0.5;

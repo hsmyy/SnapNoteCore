@@ -43,6 +43,15 @@ public:
 
 	static string getFileName(string filepath) {
 		int start = filepath.find_last_of('/');
+		if (start < 0)
+			start = -1;
+
+		//cout << filepath.substr(start + 1, end - start - 1) << endl;
+		return filepath.substr(start + 1);
+	}
+
+	static string getFileNameNoSuffix(string filepath) {
+		int start = filepath.find_last_of('/');
 		int end = filepath.find_last_of(".");
 		if (start < 0)
 			start = -1;
@@ -52,8 +61,7 @@ public:
 		//cout << filepath.substr(start + 1, end - start - 1) << endl;
 		return filepath.substr(start + 1, end - start - 1);
 	}
-	static void rmFile(string filepath)
-	{
+	static void rmFile(string filepath) {
 		string cmd = string("rm ") + filepath;
 		system(cmd.c_str());
 	}
@@ -65,13 +73,13 @@ public:
 
 	static void cleanText(string& str, const string& from, const string& to) {
 		string reg = "[^a-zA-Z0-9]+";
-	    if(from.empty())
-	        return;
-	    size_t start_pos = 0;
-	    while((start_pos = str.find(from, start_pos)) != string::npos) {
-	        str.replace(start_pos, from.length(), to);
-	        start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
-	    }
+		if (from.empty())
+			return;
+		size_t start_pos = 0;
+		while ((start_pos = str.find(from, start_pos)) != string::npos) {
+			str.replace(start_pos, from.length(), to);
+			start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+		}
 	}
 };
 

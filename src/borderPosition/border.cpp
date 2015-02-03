@@ -16,7 +16,7 @@
 
 using namespace std;
 
-int main2()
+int main_border()
 {
 	/*batch test*/
 //	DIR              *pDir ;

@@ -21,7 +21,7 @@ using namespace tesseract;
 class OCRUtil
 {
 public:
-	static string ocrFile(Mat& src, const string lang) {
+	static string ocrFile(Mat& src, const string lang = "eng+jpn+chi_sim") {
 
 		TessBaseAPI tess;
 		tess.Init(NULL, lang.c_str(), OEM_DEFAULT);
@@ -33,7 +33,7 @@ public:
 		//cout << out << endl;
 		return string(out);
 	}
-	static void ocrDir(string srcDir, string dstDir, string lang)
+	static void ocrDir(string srcDir, string dstDir, const string lang = "eng+jpn+chi_sim")
 	{
 		vector<string> files = FileUtil::getAllFiles(srcDir);
 		for(unsigned int i = 0 ; i < files.size(); i++)
@@ -42,7 +42,7 @@ public:
 			cout<<inputPath<<endl;
 			Mat src = imread(inputPath, IMREAD_GRAYSCALE);
 			string text = ocrFile(src, lang);
-			string outputPath = dstDir + "/" + FileUtil::getFileName(files[i]) + ".txt";
+			string outputPath = dstDir + "/" + FileUtil::getFileNameNoSuffix(files[i]) + ".txt";
 			cout<<outputPath<<endl;
 			FileUtil::writeToFile(text, outputPath);
 		}

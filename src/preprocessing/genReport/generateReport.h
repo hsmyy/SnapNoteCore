@@ -23,13 +23,13 @@ public:
 		for (int i = 0; i < files.size(); i++) {
 			cout << "report file :" << files[i] << endl;
 			string gtPath = string(inputDir) + "/"
-					+ FileUtil::getFileName(files[i]) + ".txt";
+					+ FileUtil::getFileNameNoSuffix(files[i]) + ".txt";
 			string newPath = string(outputDir) + "/"
-					+ FileUtil::getFileName(files[i]) + ".txt";
+					+ FileUtil::getFileNameNoSuffix(files[i]) + ".txt";
 			string chReport = string(outputDir) + "/"
-					+ FileUtil::getFileName(files[i]) + ".acc";
+					+ FileUtil::getFileNameNoSuffix(files[i]) + ".acc";
 			string waReport = string(outputDir) + "/"
-					+ FileUtil::getFileName(files[i]) + ".wa";
+					+ FileUtil::getFileNameNoSuffix(files[i]) + ".wa";
 			string chaccuCmd = UNLV_HOME + "accuracy " + gtPath + " " + newPath
 					+ " " + chReport;
 			cout << "cmd: " << chaccuCmd << endl;

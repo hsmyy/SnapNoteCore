@@ -68,8 +68,8 @@ int main_binarize() {
 			cout<<"write File: " << imgDir[j] + "/" + files[i]<<endl;
 			if(imgDir[j] != "input")
 				imwrite(imgDir[j] + "/" + files[i], dst[j]);
-			cout<<"ocr File: " << textDir[j] +"/" + FileUtil::getFileName(files[i]) + ".txt"<<endl;
-			FileUtil::writeToFile(OCRUtil::ocrFile(dst[j], lang), textDir[j] +"/" + FileUtil::getFileName(files[i]) + ".txt");
+			cout<<"ocr File: " << textDir[j] +"/" + FileUtil::getFileNameNoSuffix(files[i]) + ".txt"<<endl;
+			FileUtil::writeToFile(OCRUtil::ocrFile(dst[j], lang), textDir[j] +"/" + FileUtil::getFileNameNoSuffix(files[i]) + ".txt");
 		}
 
 

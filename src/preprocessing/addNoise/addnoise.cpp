@@ -38,7 +38,7 @@ int main_addNoise() {
 
 		for(int j = 0; j < 3; j++)
 		{
-			string outputPath = dstDir[j] + "/" + FileUtil::getFileName(files[i]) + ".jpg";
+			string outputPath = dstDir[j] + "/" + FileUtil::getFileNameNoSuffix(files[i]) + ".jpg";
 			cout<<outputPath<<endl;
 			imwrite(outputPath, dst[j]);
 		}

@@ -58,8 +58,7 @@ public:
 		GaussianBlur(src, dst, Size(kernelSize, kernelSize), 0);
 	}
 
-	static void GaussianDenoiseDir(string srcDir, string dstDir,
-			int kernelSize = 3) {
+	static void GaussianDenoiseDir(string srcDir, string dstDir, int kernelSize = 3) {
 		vector<string> files = FileUtil::getAllFiles(srcDir);
 		for (unsigned int j = 0; j < files.size(); j++) {
 			cout << srcDir + "/" + files[j] << endl;
@@ -73,16 +72,15 @@ public:
 	}
 
 	static void saltPepperDenoise(Mat& src, Mat& dst, int kernelSize = 3) {
-		cvtColor(src, src, COLOR_BGR2GRAY);
+		//cvtColor(src, src, COLOR_BGR2GRAY);
 		CV_Assert(src.channels() == 1);
 		Mat bin, spclean;
 		threshold(src, bin, 128, 255, THRESH_BINARY);
-		noiseReduction(bin, spclean);
+		noiseReduction(bin, spclean, kernelSize);
 		GaussianBlur(spclean, dst, Size(kernelSize, kernelSize), 0);
 	}
 
-	static void saltPepperDenoiseDir(string srcDir, string dstDir,
-			int kernelSize = 3) {
+	static void saltPepperDenoiseDir(string srcDir, string dstDir, int kernelSize = 3) {
 		vector<string> files = FileUtil::getAllFiles(srcDir);
 		for (unsigned int j = 0; j < files.size(); j++) {
 			//cout << srcDir + "/" + files[j] << endl;
@@ -91,6 +89,9 @@ public:
 			saltPepperDenoise(src, dst, kernelSize);
 			imwrite(dstDir + "/" + files[j], dst);
 		}
+	}
+	static void denoise(Mat& src, Mat& dst) {
+		saltPepperDenoise(src, dst);
 	}
 };
 

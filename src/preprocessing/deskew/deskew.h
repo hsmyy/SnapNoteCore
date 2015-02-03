@@ -17,7 +17,8 @@ using namespace cv;
 
 class Deskew {
 public:
-	static Mat deskew(Mat& src, Mat& dst) {
+	static void deskew(Mat& src, Mat& dst) {
+		CV_Assert(src.channels() == 1);
 		Mat grad_x, abs_grad_x, grad_y, abs_grad_y, grad;
 
 		int ddepth = 3;
@@ -86,7 +87,6 @@ public:
 
 		rot_mat = getRotationMatrix2D(center, angle, 1.0);
 		warpAffine(src, dst, rot_mat, dst.size());
-		return dst;
 	}
 
 	static void deskewDir(const char* inputDir, const char* outputDir) {

@@ -5,6 +5,8 @@
  *      Author: litton
  */
 
+#ifndef IMAGE_PROCESS_SRC_BORDERPOSITION_BORDER_H_
+#define IMAGE_PROCESS_SRC_BORDERPOSITION_BORDER_H_
 
 /**
  * Automatic perspective correction for quadrilateral objects. See the tutorial at
@@ -2230,3 +2232,4 @@ int getCropped(Mat& src, vector<Mat>& grads){
 		}
 	}
 }
+#endif
