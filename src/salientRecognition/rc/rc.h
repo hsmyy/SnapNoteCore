@@ -505,7 +505,7 @@ Mat RegionContrastSalient::originRC(vector<Region> regions, Mat &regionColor, Ma
 
 Mat RegionContrastSalient::centerRC(vector<Region> regions, Mat &regionColor, Mat &regionScore, double sigmaDist, Mat &originImage, Mat regionIdxImage, Mat_<float> &cDistCache1f, bool debug){
 	RegionContrast(regions, regionColor, regionScore,
-			originImage.rows * originImage.cols, 10, cDistCache1f);
+			originImage.rows * originImage.cols, 15, cDistCache1f);
 	int regNum = (int)regions.size();
 	Mat sal1f = Mat::zeros(originImage.size(), CV_32F);
 	if(debug){
@@ -580,16 +580,41 @@ Mat RegionContrastSalient::getRC(Mat &img3f, Mat &regionIdxImage1i, int regNum, 
 
 	}
 //	bool empty = true;
+
 	for(int i = 0; i < centerRes.rows; ++i){
 		float * centerRow = centerRes.ptr<float>(i);
 		float * originRow = originRes.ptr<float>(i);
 		for(int j = 0; j < centerRes.cols; ++j){
+			if(isnan(originRow[j])){
+				originRow[j] = 0.f;
+			}
+			if(isnan(centerRow[j])){
+				centerRow[j] = 0.f;
+			}
 			if(originRow[j] > centerRow[j]){
 				centerRow[j] = originRow[j];
 //				empty = false;
 			}
 		}
 	}
+	if(debug){
+		int originNum = 0;
+		int centerNum = 0;
+		for(int i = 0; i < centerRes.rows; ++i){
+			float * centerRow = centerRes.ptr<float>(i);
+			float * originRow = originRes.ptr<float>(i);
+			for(int j = 0; j < centerRes.cols; ++j){
+				if(originRow[j] > 0){
+					originNum++;
+				}
+				if(centerRow[j] > 0){
+					centerNum++;
+				}
+			}
+		}
+		cout << "origin:" << originNum << "," << "center:" << centerNum << endl;
+	}
+
 //	if(!empty){
 //		Mat hardHCRes = hardHC(regs, color3fv, regSal1v, sigmaDist, img, regIdx1i, debug);
 //		if(debug){

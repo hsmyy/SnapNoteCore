@@ -87,7 +87,7 @@ void SalientRec::salient(Mat &input, Mat &output){
 void SalientRec::salient(const char *inputPath, const char *segPath, const char *rcPath){
 	Mat image = imread(inputPath, 1);
 	Mat seg,regionIdxImage1i;
-//	const clock_t begin_time = clock();
+	const clock_t begin_time = clock();
 	GraphSegmentation segmentation(1.2, 200, 1000, true);
 	int regNum = segmentation.segment_image(image, regionIdxImage1i);
 	seg = segmentation.getRealSeg();
@@ -99,7 +99,7 @@ void SalientRec::salient(const char *inputPath, const char *segPath, const char 
 	mat1 = rc.cut(mat1);
 	Mat mat2 = convertToVisibleMat<float>(mat1);
 	imwrite(rcPath, mat2);
-//	cout << inputPath << ",size:[" << image.rows << "*" << image.cols << "]" << image.rows * image.cols << "/" << float(clock() - begin_time) / 1000 << "ms" << endl;
+	cout << inputPath << ",size:[" << image.rows << "*" << image.cols << "]" << image.rows * image.cols << "/" << float(clock() - begin_time) / 1000 << "ms" << endl;
 
 }
 

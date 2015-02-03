@@ -87,13 +87,13 @@ void Workflow::workflowDebug(string &inputFile){
 	Mat input = imread(inputFile);
 	SalientRec src;
 	Mat outputSRC, crossBD, outputBD;
-//	src.salientDebug(input, outputSRC);
+	src.salientDebug(input, outputSRC);
 	int res;
-//	if(src.isResultUseful(outputSRC)){
-//		res = mainProc(outputSRC, 0, crossBD, outputBD);
-//	}else{
+	if(src.isResultUseful(outputSRC)){
+		res = mainProc(outputSRC, 0, crossBD, outputBD);
+	}else{
 		res = mainProc(input, 0, crossBD, outputBD);
-//	}
+	}
 	if(res != -1){
 		//TODO preprocess
 		namedWindow("crossBD");

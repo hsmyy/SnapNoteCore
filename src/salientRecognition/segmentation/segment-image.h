@@ -123,6 +123,7 @@ Mat GraphSegmentation::getRealSeg() {
  */
 int GraphSegmentation::segment_image(Mat &img3f, Mat &segments) {
 	Mat input;
+
 	cvtColor(img3f, input, CV_BGR2Lab);
 	Mat smoothImage;
 	GaussianBlur(input, smoothImage, Size(), _sigma, 0, BORDER_REPLICATE);
