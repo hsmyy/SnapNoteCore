@@ -38,8 +38,8 @@ void Workflow::workflowTrace(string &inputFolder, string &salientFolder, string 
 				borderFile(borderFolder + inputFiles[i]), textFile(textFolder + inputFiles[i]);
 		Mat input = imread(inputFile);
 		SalientRec src;
-		Mat outputSRC, crossBD, outputBD;
-		src.salient(input, outputSRC);
+		Mat segSRC, outputSRC, crossBD, outputBD;
+		src.salient(input, outputSRC, segSRC);
 		imwrite(salientFile, outputSRC);
 		int res;
 		if(src.isResultUseful(outputSRC)){
@@ -63,8 +63,8 @@ void Workflow::workflowTrace(string &inputFolder, string &salientFolder, string 
 void Workflow::workflow(string &inputFile){
 	Mat input = imread(inputFile);
 	SalientRec src;
-	Mat outputSRC, crossBD, outputBD;
-	src.salient(input, outputSRC);
+	Mat segSRC, outputSRC, crossBD, outputBD;
+	src.salient(input, outputSRC, segSRC);
 	int res;
 	if(src.isResultUseful(outputSRC)){
 		res = mainProc(outputSRC, 0, crossBD, outputBD);
@@ -85,9 +85,9 @@ void Workflow::workflow(string &inputFile){
 
 void Workflow::workflowDebug(string &inputFile){
 	Mat input = imread(inputFile);
-	SalientRec src;
-	Mat outputSRC, crossBD, outputBD;
-	src.salientDebug(input, outputSRC);
+	SalientRec src(true);
+	Mat segSRC, outputSRC, crossBD, outputBD;
+	src.salient(input, outputSRC, segSRC);
 	int res;
 	if(src.isResultUseful(outputSRC)){
 		res = mainProc(outputSRC, 0, crossBD, outputBD);
