@@ -31,7 +31,13 @@ class SalientRec{
 public:
 	SalientRec(bool debug = false);
 	~SalientRec();
+	/**
+	 * which is not thread-safe
+	 */
 	void salient(const char *inputPath, const char *segPath = NULL, const char *rcPath = NULL);
+	/**
+	 * which is not thread-safe
+	 */
 	void salient(Mat &input, Mat &output, Mat &seg);
 	void wholeTest();
 	void emptyTest();
@@ -50,7 +56,7 @@ private:
 SalientRec::SalientRec(bool debug):
 	_debug(debug){
 	tic = clock();
-	segmentation = new GraphSegmentation(1.2, 200, 1000, true);
+	segmentation = new GraphSegmentation(1.2, 200, 500, true);
 	rc = new RegionCut(0.1f, 0.9f);
 }
 
@@ -86,15 +92,17 @@ bool SalientRec::isResultUseful(Mat &input){
 
 void SalientRec::salient(Mat &input, Mat &output, Mat &seg){
 	Mat regionIdxImage1i;
-	clock_t begin_time;
 	if(_debug){
 		debugStart();
 	}
-	int regNum = segmentation->segment_image(input, regionIdxImage1i);
+	Pyramid pyramid(input);
+	Mat scaledInput = pyramid.scale();
+	int regNum = segmentation->segment_image(scaledInput, regionIdxImage1i);
 	seg = segmentation->getRealSeg();
-	Mat mat1 = rcs.getRC(input, regionIdxImage1i, regNum, 0.4, false);
+	Mat mat1 = rcs.getRC(scaledInput, regionIdxImage1i, regNum, 0.4, false);
 	mat1 = rc->cut(mat1);
 	output = convertToVisibleMat<float>(mat1);
+	output = pyramid.reScale(output);
 	if(_debug){
 		debugEnd(input, output);
 	}
@@ -117,8 +125,10 @@ void SalientRec::wholeTest(){
 	vector<string> inputCases = listFiles(input);
 	size_t caseLen = inputCases.size();
 	for (size_t i = 0; i < caseLen; ++i) {
-		cout << inputCases[i] << ",";
+		cout << inputCases[i] << ":";
+		clock_t tic = clock();
 		salient((input + inputCases[i]).c_str(), (seg + inputCases[i]).c_str(), (output + inputCases[i]).c_str());
+		cout << float(clock() - tic) / 1000 << endl;
 	}
 }
 

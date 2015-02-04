@@ -8,6 +8,7 @@
 //#include "salientRecognition/execute.h"
 //#include "salientRecognition/rc/rcLearning.h"
 #include "workflow/workflow.h"
+#include "salientRecognition/pyramid/pyramid.h"
 
 using namespace cv;
 using namespace std;
@@ -18,13 +19,24 @@ int main(int argc, char** argv) {
 //	wholeTest();
 //	waitKey(0);
 //	learn();
-	Workflow workflow;
-	string input("test/workflow/input/"), border("test/workflow/border/"),
-			salient("test/workflow/salient/"),text("test/workflow/text");
-	workflow.workflowTrace(input,salient,border,text);
+//	Workflow workflow;
+//	string input("test/workflow/input/"), border("test/workflow/border/"),
+//			salient("test/workflow/salient/"),text("test/workflow/text");
+//	workflow.workflowTrace(input,salient,border,text);
 //	string input("test/SalientRec/input/image7.jpg");
 //	workflow.workflowDebug(input);
 //	waitKey();
+
+//	Mat a = imread("test/SalientRec/input/image2.jpg");
+//	Pyramid p(a);
+//	Mat b = p.scale();
+//	namedWindow("a");
+//	imshow("a",a);
+//	namedWindow("b");
+//	imshow("b",b);
+//	waitKey();
+	SalientRec rec;
+	rec.wholeTest();
 	return 0;
 }
 

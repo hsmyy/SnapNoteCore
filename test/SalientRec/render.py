@@ -11,4 +11,4 @@ def renderHtml(input, cross, turned):
             output.write(template.render(result=resultList))
 
 if __name__ == '__main__':
-    renderHtml('test/input/', 'test/seg/','test/output/')
+    renderHtml('input/', 'seg/','output/')
