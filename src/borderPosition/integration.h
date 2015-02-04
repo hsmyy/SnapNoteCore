@@ -20,9 +20,9 @@ using namespace std;
 /*
  * test how many percent the border and salient intersect
  */
-float coverage(vector<Point2f> borderPoints, Mat salientImg1f);
+pair<float,float> coverage(vector<Point2f> borderPoints, Mat salientImg1f);
 
-float coverage(vector<Point2f> borderPoints, Mat salientImg1f){
+pair<float,float> coverage(vector<Point2f> borderPoints, Mat salientImg1f){
 	Mat borderImg = Mat::zeros(salientImg1f.size(), CV_8UC1);
 	for (unsigned int j = 0, len = borderPoints.size(); j < len; j++) {
 		line(borderImg, borderPoints[j], borderPoints[(j + 1) % len], Scalar(255), 3, 8);
@@ -30,24 +30,31 @@ float coverage(vector<Point2f> borderPoints, Mat salientImg1f){
 	vector<vector<Point> > contours;
 	findContours(borderImg, contours, RETR_EXTERNAL,
 				CHAIN_APPROX_SIMPLE);
-	int coverNum = 0;
+	int intersectNum = 0;
+	int salientNum = 0;
+	int borderNum = 0;
 	int rowNum = salientImg1f.rows;
 	int colNum = salientImg1f.cols;
 
 	for(int y = 0; y < rowNum; ++y){
 		float *row = salientImg1f.ptr<float>(y);
 		for(int x = 0; x < colNum; ++x){
-			if(row[x] > 0){
-				if(pointPolygonTest(contours[0],
-					Point2f(x, y), false) > 0){
-					++coverNum;
+			if(pointPolygonTest(contours[0],
+				Point2f(x, y), false) > 0){
+				++borderNum;
+				if(row[x] > 0){
+					++intersectNum;
+				}
+			}else{
+				if(row[x] > 0){
+					++salientNum;
 				}
 			}
 		}
 	}
-	cout << "coverNum:" << coverNum << endl;
-	cout << "total:" << (rowNum * colNum) << endl;
-	return coverNum / (float)(rowNum * colNum);
+	float precision = borderNum > 0 ? intersectNum / (float)borderNum : 0;
+	float recall = salientNum > 0 ? intersectNum / (float)salientNum : 0;
+	return make_pair( precision, recall);
 }
 
 
