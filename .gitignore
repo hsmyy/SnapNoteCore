@@ -45,3 +45,5 @@ test/workflow/deskew/*
 test/workflow/denoise/*
 test/workflow/ocr/*
 test/workflow/turn/*
+test/SalientRec/output/*
+test/SalientRec/seg/*

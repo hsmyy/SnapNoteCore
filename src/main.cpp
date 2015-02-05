@@ -42,9 +42,10 @@ int main(int argc, char** argv) {
 //	namedWindow("b");
 //	imshow("b",b);
 //	waitKey();
-	SalientRec rec;
-	rec.wholeTest();
-	//Processor::process_main(argc, argv);
+
+//	SalientRec rec;
+//	rec.wholeTest();
+	Processor::process_main(argc, argv);
 
 	return 0;
 }

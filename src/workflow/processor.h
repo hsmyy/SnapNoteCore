@@ -32,6 +32,7 @@ using namespace cv;
 
 class Processor {
 public:
+	const static string SEG;
 	const static string SALIENT;
 	const static string BORDER;
 	const static string TURN;
@@ -120,6 +121,7 @@ public:
 		Config config = conf;
 		Mat img = imread(input);
 		cout<<"Process "<<input<<endl;
+		string segOut = config.getAndErase(SEG);
 		string salientOut = config.getAndErase(SALIENT);
 		string borderOut = config.getAndErase(BORDER);
 		string turnOut = config.getAndErase(TURN);
@@ -131,11 +133,15 @@ public:
 		}
 
 		SalientRec src;
-		Mat outputSRC, crossBD, outputBD;
+		Mat outputSRC, seg, crossBD, outputBD;
 		string salientOutPath = salientOut + "/" + FileUtil::getFileName(input);
+		string segOutPath = segOut + "/" + FileUtil::getFileName(input);
+
 
 		cout << "salient object..." << endl;
-		src.salient(img, outputSRC);
+		src.salient(img, outputSRC, seg);
+		outputSRC = convertToVisibleMat<float>(outputSRC);
+		imwrite(segOutPath, seg);
 		imwrite(salientOutPath, outputSRC);
 		int res;
 		if (src.isResultUseful(outputSRC)) {
@@ -198,6 +204,7 @@ public:
 
 		};
 
+		const string Processor::SEG = "seg";
 		const string Processor::SALIENT = "salient";
 		const string Processor::BORDER = "border";
 		const string Processor::TURN = "turn";
