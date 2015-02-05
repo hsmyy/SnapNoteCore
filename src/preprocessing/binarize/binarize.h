@@ -228,8 +228,8 @@ public:
 	static void binarize(Mat& src, Mat& dst)
 	{
 		CV_Assert(src.channels() == 1);
-		int winx = 19;
-		int winy = 19;
+		int winx = src.cols/10;
+		int winy = src.rows/10;
 		double optK = 0.5;
 		NiblackSauvolaWolfJolion(src, dst, WOLFJOLION, winx, winy, optK, 128);
 	}

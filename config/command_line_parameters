@@ -1,0 +1,1 @@
+-[sd] -i INPUT_FILE_PATH -c config/sn.conf -o OCR_RESULT_PATH
