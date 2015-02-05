@@ -5,6 +5,9 @@
  *      Author: fc
  */
 
+#ifndef EXECUTE_H_
+#define EXECUTE_H_
+
 #include <dirent.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -23,6 +26,7 @@
 #include "segmentation/pnmfile.h"
 #include "segmentation/segment-image.h"
 #include "pyramid/pyramid.h"
+#include "../util/general.h"
 
 using namespace cv;
 using namespace std;
@@ -44,24 +48,32 @@ public:
 	bool isResultUseful(Mat &input);
 private:
 	void debugStart();
-	void debugEnd(Mat &input, Mat &output);
+	/**
+	 * type: 1 means highContrast, 2 means lowContrast
+	 */
+	void debugEnd(Mat &input, Mat &output, GraphSegmentation *selection);
 private:
 	bool _debug;
-	GraphSegmentation *segmentation;
+	GraphSegmentation *highContrastSeg;
+	GraphSegmentation *lowContrastSeg;
 	clock_t tic;
-	RegionContrastSalient rcs;
+	RegionContrastSalient *rcs;
 	RegionCut *rc;
 };
 
 SalientRec::SalientRec(bool debug):
 	_debug(debug){
 	tic = clock();
-	segmentation = new GraphSegmentation(1.2, 200, 500, true);
-	rc = new RegionCut(0.1f, 0.9f);
+	highContrastSeg = new GraphSegmentation(1.2, 200, 500, debug);
+	lowContrastSeg = new GraphSegmentation(0.95, 200, 500, debug);
+	rcs = new RegionContrastSalient(0.4, 2, 0.01, debug);
+	rc = new RegionCut(0.1f, 0.9f, debug);
 }
 
 SalientRec::~SalientRec(){
-	delete segmentation;
+	delete highContrastSeg;
+	delete lowContrastSeg;
+	delete rcs;
 	delete rc;
 }
 
@@ -69,8 +81,8 @@ void SalientRec::debugStart(){
 	tic = clock();
 }
 
-void SalientRec::debugEnd(Mat &input, Mat &output){
-	Mat seg = segmentation->getRealSeg();
+void SalientRec::debugEnd(Mat &input, Mat &output, GraphSegmentation *selection){
+	Mat seg = selection->getRealSeg();
 	namedWindow("Seg");
 	imshow("Seg", seg);
 	namedWindow("Final2");
@@ -97,14 +109,23 @@ void SalientRec::salient(Mat &input, Mat &output, Mat &seg){
 	}
 	Pyramid pyramid(input);
 	Mat scaledInput = pyramid.scale();
-	int regNum = segmentation->segment_image(scaledInput, regionIdxImage1i);
-	seg = segmentation->getRealSeg();
-	Mat mat1 = rcs.getRC(scaledInput, regionIdxImage1i, regNum, 0.4, false);
-	mat1 = rc->cut(mat1);
+	General g(scaledInput);
+	pair<Vec3b,double> p = g.meanVariance();
+	if(_debug){
+		cout << "mean variance:" << p.first << "," << p.second << endl;
+	}
+	int regNum;
+	GraphSegmentation *selection;
+	selection = p.second > 100 ? highContrastSeg : lowContrastSeg;
+	regNum = selection->segment_image(scaledInput, regionIdxImage1i);
+	seg = selection->getRealSeg();
+	Mat mat1 = rcs->getRC(scaledInput, regionIdxImage1i, regNum, 0.4, false);
+	mat1 = rc->cut(mat1, regionIdxImage1i);
+	// if still not found, we can choose the largest one as salient.
 	output = convertToVisibleMat<float>(mat1);
 	output = pyramid.reScale(output);
 	if(_debug){
-		debugEnd(input, output);
+		debugEnd(input, output, selection);
 	}
 }
 
@@ -142,9 +163,8 @@ void SalientRec::emptyTest(){
 }
 
 int main1(int argc, char** argv) {
-
 	waitKey(0);
-
 	return 0;
 }
 
+#endif
