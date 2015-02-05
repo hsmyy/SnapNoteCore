@@ -37,13 +37,6 @@ local.properties
 .texlipse
 
 #
-#src/main.cpp
-test/workflow/salient/*
-test/workflow/border/*
-test/workflow/binarize/*
-test/workflow/deskew/*
-test/workflow/denoise/*
-test/workflow/ocr/*
-test/workflow/turn/*
-test/SalientRec/output/*
-test/SalientRec/seg/*
+src/main.cpp
+test/*
+.idea/
