@@ -44,3 +44,4 @@ test/workflow/binarize/*
 test/workflow/deskew/*
 test/workflow/denoise/*
 test/workflow/ocr/*
+test/workflow/turn/*

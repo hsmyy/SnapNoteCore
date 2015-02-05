@@ -34,6 +34,7 @@ class Processor {
 public:
 	const static string SALIENT;
 	const static string BORDER;
+	const static string TURN;
 	const static string BINARIZE;
 	const static string DENOISE;
 	const static string DESKEW;
@@ -99,9 +100,11 @@ public:
 
 		if (singleMode) {
 			Mat dst = Processor::processFile(input, config);
+
 			if (!ocrOutput.empty()) {
 				string textPath = ocrOutput + "/"
 						+ FileUtil::getFileNameNoSuffix(input) + ".txt";
+				cout<<"OCR ...: "<<textPath<<endl;
 				string text = OCRUtil::ocrFile(dst, "eng+jpn");
 				FileUtil::writeToFile(text, textPath);
 			}
@@ -116,8 +119,10 @@ public:
 	static Mat processFile(string input, const Config conf) {
 		Config config = conf;
 		Mat img = imread(input);
+		cout<<"Process "<<input<<endl;
 		string salientOut = config.getAndErase(SALIENT);
 		string borderOut = config.getAndErase(BORDER);
+		string turnOut = config.getAndErase(TURN);
 		if (salientOut.empty() || borderOut.empty()) {
 			cerr
 					<< "salient output or border output is empty. (in config file)!"
@@ -142,12 +147,18 @@ public:
 			return img;
 
 		string borderOutPath = borderOut + "/" + FileUtil::getFileName(input);
+		string turnOutPath = turnOut + "/" + FileUtil::getFileName(input);
+
 		imwrite(borderOutPath, crossBD);
+		normalize(outputBD, outputBD, 0, 255, NORM_MINMAX);
+		outputBD.convertTo(outputBD, CV_8UC1);
+		imwrite(turnOutPath, outputBD);
+
 
 		cout << "Preprocessing..." << endl;
 		Mat pre = outputBD;
 		cvtColor(outputBD, pre, COLOR_BGR2GRAY);
-		pre.convertTo(pre, CV_8UC1);
+		//pre.convertTo(pre, CV_8UC1);
 
 //		imshow("output", outputBD);
 //		waitKey(0);
@@ -189,6 +200,7 @@ public:
 
 		const string Processor::SALIENT = "salient";
 		const string Processor::BORDER = "border";
+		const string Processor::TURN = "turn";
 		const string Processor::BINARIZE = "binarize";
 		const string Processor::DENOISE = "denoise";
 		const string Processor::DESKEW = "deskew";
