@@ -140,9 +140,9 @@ public:
 
 		cout << "salient object..." << endl;
 		src.salient(img, outputSRC, seg);
-		outputSRC = convertToVisibleMat<float>(outputSRC);
+		Mat outputFileSRC = convertToVisibleMat<float>(outputSRC);
 		imwrite(segOutPath, seg);
-		imwrite(salientOutPath, outputSRC);
+		imwrite(salientOutPath, outputFileSRC);
 		int res;
 		if (src.isResultUseful(outputSRC)) {
 			res = mainProc2(img, outputSRC, 0, crossBD, outputBD);

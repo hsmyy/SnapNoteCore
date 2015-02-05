@@ -95,7 +95,7 @@ bool SalientRec::isResultUseful(Mat &input){
 	for(int y = 0; y < input.rows; ++y){
 		Vec3b *row = input.ptr<Vec3b>(y);
 		for(int x = 0; x < input.cols; ++x, ++row){
-			if((*row)[0] > 0 || (*row)[1] > 0 || (*row)[2] > 0){
+			if(*row > 1e-6){
 				return true;
 			}
 		}
