@@ -24,6 +24,8 @@ using namespace std;
 const float CANDIDATE_SIGN = 0.3;
 const float CHOOSE_SIGN = 0.4;
 
+const Mat closeOpKernel(7, 7, CV_8U, cv::Scalar(1));
+
 class RegionCut{
 private:
 	typedef struct {
@@ -163,7 +165,6 @@ Mat RegionCut::cut(Mat img1f, Mat regionImg1i){
 		floodCenterRegion(img1f);
 	}else{
 		// 2) get region connected map
-
 		vector<ConnectRegion> cRegions;
 		Mat cRegionIdx;
 		findConnectedRegion(img1f, cRegionIdx, cRegions);
@@ -216,6 +217,7 @@ void RegionCut::modifyRegion(Mat &img1f, Mat &flag, vector<ConnectRegion> &regio
 		//draw centroid on this region
 		// TODO filling some gap
 		findMainBorder(img1f);
+		morphologyEx(img1f, img1f, cv::MORPH_CLOSE, closeOpKernel);
 	}else{
 		img1f = 0;
 	}

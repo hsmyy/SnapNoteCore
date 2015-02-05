@@ -40,6 +40,7 @@ void Workflow::workflowTrace(string &inputFolder, string &salientFolder, string 
 		SalientRec src;
 		Mat segSRC, outputSRC, crossBD, outputBD;
 		src.salient(input, outputSRC, segSRC);
+
 		imwrite(salientFile, outputSRC);
 		int res;
 		if(src.isResultUseful(outputSRC)){

@@ -46,6 +46,7 @@ public:
 	void wholeTest();
 	void emptyTest();
 	bool isResultUseful(Mat &input);
+	Mat convertToVisibleMatrix(Mat &input);
 private:
 	void debugStart();
 	/**
@@ -122,11 +123,15 @@ void SalientRec::salient(Mat &input, Mat &output, Mat &seg){
 	Mat mat1 = rcs->getRC(scaledInput, regionIdxImage1i, regNum, 0.4, false);
 	mat1 = rc->cut(mat1, regionIdxImage1i);
 	// if still not found, we can choose the largest one as salient.
-	output = convertToVisibleMat<float>(mat1);
-	output = pyramid.reScale(output);
+//	output = convertToVisibleMat<float>(mat1);
+	output = pyramid.reScale(mat1);
 	if(_debug){
 		debugEnd(input, output, selection);
 	}
+}
+
+Mat SalientRec::convertToVisibleMatrix(Mat &input){
+	return convertToVisibleMat<float>(input);
 }
 
 void SalientRec::salient(const char *inputPath, const char *segPath, const char *rcPath){
@@ -137,6 +142,7 @@ void SalientRec::salient(const char *inputPath, const char *segPath, const char 
 		imwrite(segPath, seg);
 	}
 	if(rcPath != NULL){
+		output = convertToVisibleMat<float>(output);
 		imwrite(rcPath, output);
 	}
 }
