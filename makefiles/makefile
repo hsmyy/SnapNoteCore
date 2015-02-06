@@ -50,7 +50,7 @@ all: image_process
 image_process: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -L/home/xxy/leptonica/lib -L/home/xxy/tesseract/lib -L/home/xxy/opencv/lib -o "image_process" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -L/home/ubuntu/leptonica/lib -L/home/ubuntu/tesseract/lib -L/home/ubuntu/opencv/lib -o "image_process" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

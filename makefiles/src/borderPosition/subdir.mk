@@ -17,7 +17,7 @@ CPP_DEPS += \
 src/borderPosition/%.o: ../src/borderPosition/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
-	g++ -I/home/xxy/opencv/include -I/home/xxy/opencv/include/opencv -I/home/xxy/tesseract/include -I/home/xxy/leptonica/include -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	g++ -I/home/ubuntu/opencv/include -I/home/ubuntu/opencv/include/opencv -I/home/ubuntu/tesseract/include -I/home/ubuntu/leptonica/include -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
