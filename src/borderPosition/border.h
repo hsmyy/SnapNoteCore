@@ -52,28 +52,28 @@ int THRESHOLD[2] = {2,7};
 int SIZE[2] = {3,7};
 int RUN[4] = {1,2,2,1};
 int VOTERATE = 2;
-double OPPOANG = 1.0/6;
+double OPPOANG = 1.0/4;
 int THRESHSCALE = 40;//210;
 int MAXLINK = 20;
 
 #define hough_cmp_gt(l1,l2) (aux[l1] > aux[l2])
 
-int lineScore[2][30];
-int anglScore[2][30];
-int spaceScore[2][30];
-int areaScore[2][30];
-int scoreCur[2]={0,0};
+int lineScore[3][30];
+int anglScore[3][30];
+int spaceScore[3][30];
+int areaScore[3][30];
+int scoreCur[3]={0,0,0};
 vector<int> tLineScore;
 vector<double> tAnglScore;
 vector<int> tAreaScore;
 vector<double> tSpaceScore;
 int curphase = 0;
-int topRank[40];
-int finalRank[20];
-int spaceRank[20];
-int angleRank[20];
-int spaceRankDic[20];
-int angleRankDic[20];
+int topRank[90];
+int finalRank[30];
+int spaceRank[30];
+int angleRank[30];
+int spaceRankDic[30];
+int angleRankDic[30];
 bool doubt = true;
 
 void distance(Point2f p1, Point2f p2, double& db){
@@ -339,7 +339,7 @@ bool isLine(cv::Mat& mat, double& linkScore, double& linkSpace, cv::Point pt1, c
 	//cout<<count<<endl;
 	int lastx = -1;
 	int lasty = -1;
-
+	int cutcount = 0;
 	while (--count) {
 		CV_NEXT_LINE_POINT(iterator);
 
@@ -386,7 +386,8 @@ bool isLine(cv::Mat& mat, double& linkScore, double& linkSpace, cv::Point pt1, c
 		} else {
 			maxSpace = std::max(maxSpace, space);
 			space = 0;
-
+			if(link==0)
+				cutcount++;
 			link++;
 		}
 
@@ -428,23 +429,24 @@ bool isLine(cv::Mat& mat, double& linkScore, double& linkSpace, cv::Point pt1, c
 	maxTb=max(maxTb,tb);
 	//cout<<"grad "<<maxLr<<" "<<maxTb<<endl;
 	if(procMode==3&&mode==1&&maxLr<11&&maxTb<7){
-		//if (debug) cout<<"false0"<<endl;
+		if (debug) cout<<"false0"<<endl;
 		return false;
 	}
+	MAXLINK = 10;
 	if (mode<=2&&maxLink >= MAXLINK)
 	{
-		//if (debug) std::cout<<"true1 "<<maxLink<<std::endl;
+		if (debug) std::cout<<"true1 "<<maxLink<<std::endl;
 		linkScore = maxLink;
-		linkSpace = maxSpace;
+		linkSpace = cutcount;//maxSpace;
 		if(linkSpace==0) linkSpace=1;
 		return true;
 	}
 	if (maxSpace >= threshhold)
 	{
-		//if (debug) std::cout<<"false1 "<<maxSpace<<" "<<maxLink<<" "<<threshhold<<std::endl;
+		if (debug) std::cout<<"false1 "<<maxSpace<<" "<<maxLink<<" "<<threshhold<<std::endl;
 		return false;
 	}
-	//if (debug) std::cout<<"true2 "<<maxSpace<<" "<<maxLink<<std::endl;
+	if (debug) std::cout<<"true2 "<<maxSpace<<" "<<maxLink<<std::endl;
 	linkScore = maxLink;
 	return true;
 }
@@ -702,7 +704,7 @@ bool isRealQuadr(cv::Mat pic, cv::Vec4i xylines[], Vec4i lineSeg[], int thresh, 
 	double dx1,dx2,dx3,dx4;
 	if(debug)
 	for(int i=0;i<4;i++){
-		cout<<"xianduan "<<i<<": "<<lineSeg[i][0]<<" "<<lineSeg[i][1]<<" "<<lineSeg[i][2]<<" "<<lineSeg[i][4]<<endl;
+		cout<<"xianduan "<<i<<": "<<lineSeg[i][0]<<" "<<lineSeg[i][1]<<" "<<lineSeg[i][2]<<" "<<lineSeg[i][3]<<endl;
 	}
 
 	if(!isLine(pic,dd1,dx1,pt[0],pt[1],THRESHOLD,SIZE,2,procMode,debug))
@@ -718,7 +720,7 @@ bool isRealQuadr(cv::Mat pic, cv::Vec4i xylines[], Vec4i lineSeg[], int thresh, 
 	//score = dd1/dx1+dd2/dx2+dd3/dx3+dd4/dx4;
 	if(debug) cout<<(dd1+dd2+dd3+dd4)<<" "<<(dx1+dx2+dx3+dx4)<<endl;
 
-	std::cout<<"true quadr"<<std::endl;
+	//std::cout<<"true quadr"<<std::endl;
 	quadrNode n;
 	n.k = k;
 	n.l = l;
@@ -728,14 +730,15 @@ bool isRealQuadr(cv::Mat pic, cv::Vec4i xylines[], Vec4i lineSeg[], int thresh, 
 }
 
 bool verti(CvLinePolar2* line,bool debug){
-	if(fabs(line->angle)<CV_PI/10.0)
+	if(fabs(line->angle)<CV_PI/24.0)
 		return true;
-
+	if(fabs(line->angle-CV_PI)<CV_PI/24.0)
+		return true;
 	return false;
 }
 
 bool horiz(CvLinePolar2* line,bool debug){
-	if(fabs(line->angle-CV_PI/2)<CV_PI/10.0)
+	if(fabs(line->angle-CV_PI/2)<CV_PI/36.0)
 		return true;
 
 	return false;
@@ -770,46 +773,118 @@ bool toushi(CvLinePolar2* line1, CvLinePolar2* line2,bool debug){
 	if(find){
 		double ang1 = CV_PI/2 - line_r->angle;
 		double ang2 = line_l->angle - CV_PI/2;
-
+//		if(debug)
+//			cout<<"[debug toushi] ANG1 "<<ang1<<" ANG2 "<<ang2<<endl;
 		if(fabs(ang1-ang2)>CV_PI/10)
 			return false;
+		else
+			return true;
 	}
-	return true;
+	return false;
 }
 
 bool shuzhi(CvLinePolar2* line1, CvLinePolar2* line2,bool debug){
 
-	CvLinePolar2* line_t;
-	CvLinePolar2* line_b;
+	CvLinePolar2* line_r;
+	CvLinePolar2* line_l;
 	bool find = false;
+	bool find2 = false;
+	bool find3 = false;
 
 	if(debug)
 		cout<<"[debug shuzhi] "<<line1->angle<<" "<<line2->angle<<endl;
 
-	if(line1->angle>=0&&line1->angle<=CV_PI/2+0.0001&&line2->angle>=CV_PI*3/2-0.0001&&line2->angle<=2*CV_PI){
-
-		if(debug)
-			cout<<"[debug shuzhi] TRUE"<<endl;
+	if(line1->angle>=3*CV_PI/2&&line1->angle<=2*CV_PI&&line2->angle>=3*CV_PI/2&&line2->angle<=2*CV_PI){
+		if((2*CV_PI-line1->angle)<CV_PI/15&&(2*CV_PI-line2->angle)<CV_PI/15)
+		{
+			if(debug) cout<<"[debug shuzhi] true"<<endl;
+			return true;
+		}
+	}
+	if(line1->angle>=0&&line1->angle<=CV_PI/2&&line2->angle>=0&&line2->angle<=CV_PI/2){
+		if((line1->angle)<CV_PI/15&&(line2->angle)<CV_PI/15)
+		{
+			if(debug) cout<<"[debug shuzhi] true"<<endl;
+			return true;
+		}
+	}
+	if(line1->angle>=CV_PI/2&&line1->angle<=CV_PI&&line2->angle>=3*CV_PI/2&&line2->angle<=2*CV_PI){
+		if((CV_PI-line1->angle)<CV_PI/15&&(2*CV_PI-line2->angle)<CV_PI/15)
+		{
+			if(debug) cout<<"[debug shuzhi] true"<<endl;
+			return true;
+		}
+	}
+	if(line2->angle>=CV_PI/2&&line2->angle<=CV_PI&&line1->angle>=3*CV_PI/2&&line1->angle<=2*CV_PI){
+		if((CV_PI-line2->angle)<CV_PI/15&&(2*CV_PI-line1->angle)<CV_PI/15)
+		{
+			if(debug) cout<<"[debug shuzhi] true"<<endl;
+			return true;
+		}
+	}
+	if(line1->angle>=0&&line1->angle<=CV_PI/2&&line2->angle>=3*CV_PI/2&&line2->angle<=2*CV_PI&&line1->rho<line2->rho){
 		find = true;
-		line_t = line2;
-		line_b = line1;
+		line_l = line1;
+		line_r = line2;
 	}
 
-	if(line2->angle>=0&&line2->angle<=CV_PI/2+0.0001&&line1->angle>=CV_PI*3/2-0.0001&&line1->angle<=2*CV_PI){
-		if(debug)
-			cout<<"[debug shuzhi] TRUE"<<endl;
+	if(line2->angle>=0&&line2->angle<=CV_PI/2&&line1->angle>=3*CV_PI/2&&line1->angle<=2*CV_PI&&line2->rho<line1->rho){
 		find = true;
-		line_t = line1;
-		line_b = line2;
+		line_l = line2;
+		line_r = line1;
 	}
-
 	if(find){
-		double ang1 = 2*CV_PI/2 - line_t->angle;
-		double ang2 = line_b->angle;
+		double ang1 = line_l->angle;
+		double ang2 = 2*CV_PI - line_r->angle;
 
-		if(fabs(ang1-ang2)>CV_PI/10)
-			return false;
+		if(fabs(ang1-ang2)<CV_PI/25)
+		{
+			if(debug) cout<<"[debug shuzhi] true"<<endl;
+			return true;
+		}
 	}
+
+	if(line1->angle>=0&&line1->angle<=CV_PI/2&&line2->angle>=3*CV_PI/2&&line2->angle<=2*CV_PI&&line1->rho>line2->rho){
+		find2 = true;
+		line_l = line2;
+		line_r = line1;
+	}
+
+	if(line2->angle>=0&&line2->angle<=CV_PI/2&&line1->angle>=3*CV_PI/2&&line1->angle<=2*CV_PI&&line2->rho>line1->rho){
+		find2 = true;
+		line_l = line1;
+		line_r = line2;
+	}
+	if(find2){
+		double ang1 = line_r->angle;
+		double ang2 = 2*CV_PI - line_l->angle;
+
+		if(fabs(ang1-ang2)<CV_PI/25)
+		{
+			if(debug) cout<<"[debug shuzhi] true"<<endl;
+			return true;
+		}
+	}
+	//TODO some rare case exists
+
+	if(debug) cout<<"[debug shuzhi] false"<<endl;
+	return false;
+}
+
+bool sameDir(CvLinePolar2* line1, CvLinePolar2* line2){
+
+	if(line1->angle>=0&&line1->angle<=CV_PI/2+0.00001&&line2->angle>=0&&line2->angle<=CV_PI/2+0.00001)
+		return true;
+
+	if(line1->angle>=CV_PI/2+0.00001&&line1->angle<=CV_PI&&line2->angle>=CV_PI/2+0.00001&&line2->angle<=CV_PI)
+		return true;
+
+	if(line1->angle>=CV_PI&&line1->angle<=3*CV_PI/2&&line2->angle>=CV_PI&&line2->angle<=3*CV_PI/2)
+		return true;
+
+	if(line1->angle>=CV_PI*3/2&&line1->angle<=2*CV_PI&&line2->angle>=3*CV_PI/2&&line2->angle<=2*CV_PI)
+		return true;
+
 	return false;
 }
 
@@ -823,18 +898,34 @@ bool isLikeRect(CvLinePolar2 ** clines,bool debug){
 		cout<<"[debug like rect] "<<line1->angle<<" "<<line2->angle<<" "<<line3->angle<<" "<<line4->angle<<endl;
 	}
 
+//	if(debug) cout<<"[debug like rect] TEST1"<<endl;
 	if(verti(line1,debug)&&verti(line2,debug)&&!toushi(line3,line4,debug))
-		return false;
-
+	{if(debug) cout<<"[debug like rect] FALSE1"<<endl;	return false;}
+//	if(debug) cout<<"[debug like rect] TEST2"<<endl;
+	if(verti(line1,debug)&&verti(line2,debug)&&toushi(line3,line4,debug))
+	{if(debug) cout<<"[debug like rect] TRUE1"<<endl;	return true;}
+//	if(debug) cout<<"[debug like rect] TEST3"<<endl;
 	if(verti(line3,debug)&&verti(line4,debug)&&!toushi(line1,line2,debug))
-		return false;
-/*
+	{if(debug) cout<<"[debug like rect] FALSE2"<<endl;	return false;}
+//	if(debug) cout<<"[debug like rect] TEST4"<<endl;
+	if(verti(line3,debug)&&verti(line4,debug)&&toushi(line1,line2,debug))
+	{if(debug) cout<<"[debug like rect] TRUE2"<<endl;	return true;}
+///**/if(debug) cout<<"[debug like rect] TEST5"<<endl;
 	if(horiz(line1,debug)&&horiz(line2,debug)&&!shuzhi(line3,line4,debug))
-		return false;
-
+	{if(debug) cout<<"[debug like rect] FALSE3"<<endl;	return false;}
+//	if(debug) cout<<"[debug like rect] TEST6"<<endl;
+	if(horiz(line1,debug)&&horiz(line2,debug)&&shuzhi(line3,line4,debug))
+	{if(debug) cout<<"[debug like rect] TRUE3"<<endl;	return true;}
+//	if(debug) cout<<"[debug like rect] TEST7"<<endl;
 	if(horiz(line3,debug)&&horiz(line4,debug)&&!shuzhi(line1,line2,debug))
-		return false;
-*/
+	{if(debug) cout<<"[debug like rect] FALSE4"<<endl;	return false;}
+//	if(debug) cout<<"[debug like rect] TEST8"<<endl;
+	if(horiz(line3,debug)&&horiz(line4,debug)&&shuzhi(line1,line2,debug))
+	{if(debug) cout<<"[debug like rect] TRUE4"<<endl;	return true;}
+	//if(sameDir(line1,line2)&&sameDir(line3,line4)&&(fabs(line1->angle-line2->angle)+fabs(line3->angle-line4->angle)>CV_PI/10))
+	//	return false;
+
+
 	if(debug) cout<<"[debug like rect] TRUE"<<endl;
 	return true;
 }
@@ -1046,7 +1137,7 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses, prior
 		finalines[0][0] = pt1.x; finalines[0][1]=pt1.y; finalines[0][2] = pt2.x; finalines[0][3]=pt2.y;
 		//cv::line( dist, pt1, pt2, CV_RGB(0,255,0),4);double areaScore[3][30];
 
-		std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
+		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
 
 		line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[finalK].two);
 		rho = line->rho;
@@ -1062,7 +1153,7 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses, prior
 		finalines[1][0] = pt1.x; finalines[1][1]=pt1.y; finalines[1][2] = pt2.x; finalines[1][3]=pt2.y;
 		//cv::line( dist, pt1, pt2, CV_RGB(0,255,0),4);
 
-		std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
+		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
 
 		line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[finalL].one);
 		rho = line->rho;
@@ -1078,7 +1169,7 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses, prior
 		finalines[2][0] = pt1.x; finalines[2][1]=pt1.y; finalines[2][2] = pt2.x; finalines[2][3]=pt2.y;
 		//cv::line( dist, pt1, pt2, CV_RGB(0,255,0),4);
 
-		std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
+		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
 
 		line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[finalL].two);
 		rho = line->rho;
@@ -1129,10 +1220,10 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses, prior
 	center *= (1. / corners.size());
 
 	sortCorners(corners, center);
-	cout<<"center "<<center.x<<" "<<center.y<<endl;
-	for(int i=0;i<4;i++){
-		cout<<"corner "<<corners[i].x<<" "<<corners[i].y<<endl;
-	}
+//	cout<<"center "<<center.x<<" "<<center.y<<endl;
+//	for(int i=0;i<4;i++){
+//		cout<<"corner "<<corners[i].x<<" "<<corners[i].y<<endl;
+//	}
 	if (corners.size() == 0){
 		std::cout << "The corners were not sorted correctly!" << std::endl;
 		continue;//return;
@@ -1207,7 +1298,7 @@ void myNormalSize(Mat& src, Mat& tsrc, int type){
 //procMode: 0, default; 1, big; 2, micro; 3, deep1
 int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& cross){
 
-	scoreCur[0] = 0;scoreCur[1] = 0;
+	scoreCur[0] = 0;scoreCur[1] = 0;scoreCur[2] = 0;
 	//step0: to gray picture
 
 
@@ -1556,8 +1647,8 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
                 	angleSum -= CV_PI;
 
                 bool debug = false;
-                if(k==412&&l==657)
-                	debug = true;
+//                if(k>0&&l>0)
+//                	debug = true;
 
                 Vec4i segs[4];
 				segs[0]=lines1[pair1.one];
@@ -1604,6 +1695,7 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
 //procMode: 0, default; 1, big; 2, micro; 3, deep1
 int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross,  Mat& turned){
 	vector<vector<cv::Point2f> > cross_l;
+	vector<vector<cv::Point2f> > cross_m;
 	vector<vector<cv::Point2f> > cross_s;
 
 	for(int run=0;run<1;run++){
@@ -1613,6 +1705,7 @@ int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross,  Mat& turned){
 		myNormalSize(slt,tslt,CV_32F);//really?
 		crosses.clear();
 		cross_l.clear();
+		cross_m.clear();
 		cross_s.clear();
 		tLineScore.clear();
 		tAreaScore.clear();
@@ -1626,11 +1719,16 @@ int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross,  Mat& turned){
 		int result = process(tsrc, tslt, procMode,cross_l);
 
 		if(doubt){
-			lighting = 40.0;
+			lighting = 110.0;
 			curphase = 1;
+			result = process(tsrc, tslt, procMode,cross_m);
+		}
+		if(doubt){
+			lighting = 40.0;
+			curphase = 2;
 			result = process(tsrc, tslt, procMode,cross_s);
 		}
-		for(int j=0;j<20&&j<cross_l.size();j++){
+		for(int j=0;j<30&&j<cross_l.size();j++){
 			crosses.push_back(cross_l[j]);
 
 			tLineScore.push_back(lineScore[0][j]);
@@ -1639,13 +1737,22 @@ int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross,  Mat& turned){
 			tSpaceScore.push_back(spaceScore[0][j]);
 		}
 
-		for(int j=0;j<20&&j<cross_s.size();j++){
+		for(int j=0;j<30&&j<cross_m.size();j++){
+				crosses.push_back(cross_m[j]);
+
+				tLineScore.push_back(lineScore[1][j]);
+				tAreaScore.push_back(areaScore[1][j]);
+				tAnglScore.push_back(anglScore[1][j]);
+				tSpaceScore.push_back(spaceScore[1][j]);
+			}
+
+		for(int j=0;j<30&&j<cross_s.size();j++){
 			crosses.push_back(cross_s[j]);
 
-			tLineScore.push_back(lineScore[1][j]);
-			tAreaScore.push_back(areaScore[1][j]);
-			tAnglScore.push_back(anglScore[1][j]);
-			tSpaceScore.push_back(spaceScore[1][j]);
+			tLineScore.push_back(lineScore[2][j]);
+			tAreaScore.push_back(areaScore[2][j]);
+			tAnglScore.push_back(anglScore[2][j]);
+			tSpaceScore.push_back(spaceScore[2][j]);
 		}
 
 		if(crosses.size()==0){
@@ -1653,11 +1760,11 @@ int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross,  Mat& turned){
 			turned = Mat::zeros(src.rows,src.cols,CV_32SC3);
 			return -1;
 		}
-		for(int i=0;i<40;i++){
+		for(int i=0;i<90;i++){
 			topRank[i] = i;
 		}
 
-		qsort(topRank, min(40,(int)crosses.size()), sizeof(int), compareTopScore);
+		qsort(topRank, min(90,(int)crosses.size()), sizeof(int), compareTopScore);
 		vector<cv::Point2f> corners;
 
 		if(tAreaScore[topRank[0]]>0){
@@ -1665,22 +1772,22 @@ int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross,  Mat& turned){
 
 		}
 		else{
-			for(int i=0;i<20;i++)
+			for(int i=0;i<30;i++)
 			{
 				finalRank[i] = i;
 				spaceRank[i] = i;
 				angleRank[i] = i;
 			}
 
-			qsort(spaceRank, min(20,(int)crosses.size()), sizeof(int), compareSpaceScore);
-			qsort(angleRank, min(20,(int)crosses.size()), sizeof(int), compareAngleScore);
+			qsort(spaceRank, min(30,(int)crosses.size()), sizeof(int), compareSpaceScore);
+			qsort(angleRank, min(30,(int)crosses.size()), sizeof(int), compareAngleScore);
 
-			for(int i=0;i<20&&i<crosses.size();i++){
+			for(int i=0;i<30&&i<crosses.size();i++){
 				spaceRankDic[spaceRank[i]] = i;
 				angleRankDic[angleRank[i]] = i;
 			}
 
-			qsort(finalRank, min(20,(int)crosses.size()), sizeof(int), compareFinalScore);
+			qsort(finalRank, min(30,(int)crosses.size()), sizeof(int), compareFinalScore);
 			corners = crosses[topRank[finalRank[0]]];
 		}
 
