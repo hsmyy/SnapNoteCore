@@ -81,6 +81,7 @@ void Workflow::workflowDebug(string &inputFile) {
 	SalientRec src(true);
 	Mat segSRC, outputSRC, crossBD, outputBD;
 	src.salient(input, outputSRC, segSRC);
+
 	int res = mainProc(input, outputSRC, 0, crossBD, outputBD);
 
 	if (res != -1) {

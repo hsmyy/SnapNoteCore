@@ -41,6 +41,9 @@ public:
 	const static string DENOISE;
 	const static string DESKEW;
 
+
+	static string lang ;
+
 	static void usage() {
 		cout << "Please add parameters:" << endl;
 		cout << " -s Single image mode." << endl;
@@ -111,15 +114,16 @@ public:
 				string textPath = ocrOutput + "/"
 						+ FileUtil::getFileNameNoSuffix(input) + ".txt";
 				cout << "OCR to: " << textPath << endl;
-				string text = OCRUtil::ocrFile(dst, "eng+jpn+chi_sim");
+
+				string text = OCRUtil::ocrFile(dst, lang);
 				FileUtil::writeToFile(text, textPath);
 			}
 		} else {
 			if (!input.empty())
 				Processor::processDir(input, config);
 			if (!ocrOutput.empty() && config.size() > 0) {
-				OCRUtil::ocrDir(config.get(config.size() - 1).second, ocrOutput,
-						"eng+jpn+chi_sim");
+
+				OCRUtil::ocrDir(config.get(config.size() - 1).second, ocrOutput,lang);
 			}
 		}
 	}
@@ -150,7 +154,13 @@ public:
 		imwrite(segOutPath, seg);
 		imwrite(salientOutPath, outputFileSRC);
 		//cout<<outputSRC(Rect(0, 0, 500, 500))<<endl;
+
+//		int res;
+//		if (src.isResultUseful(outputSRC)) {
 		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
+//		} else {
+//			res = mainProc(img, outputSRC, 0, crossBD, outputBD);
+//		}
 
 		string borderOutPath = borderOut + "/" + FileUtil::getFileName(input);
 		string turnOutPath = turnOut + "/" + FileUtil::getFileName(input);
@@ -213,5 +223,7 @@ public:
 		const string Processor::BINARIZE = "binarize";
 		const string Processor::DENOISE = "denoise";
 		const string Processor::DESKEW = "deskew";
+		string Processor::lang = "eng";
+
 
 #endif /* IMAGE_PROCESS_SRC_WORKFLOW_PROCESSOR_H_ */
