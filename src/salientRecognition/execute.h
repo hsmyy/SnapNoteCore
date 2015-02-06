@@ -93,7 +93,7 @@ void SalientRec::debugEnd(Mat &input, Mat &output, GraphSegmentation *selection)
 
 bool SalientRec::isResultUseful(Mat &input){
 	for(int y = 0; y < input.rows; ++y){
-		Vec3b *row = input.ptr<Vec3b>(y);
+		float *row = input.ptr<float>(y);
 		for(int x = 0; x < input.cols; ++x, ++row){
 			if(*row > 1e-6){
 				return true;
