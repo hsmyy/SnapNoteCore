@@ -10,6 +10,11 @@
  * Automatic perspective correction for quadrilateral objects. See the tutorial at
  * http://opencv-code.com/tutorials/automatic-perspective-correction-for-quadrilateral-objects/
  */
+
+#ifndef BORDER_H
+#define BORDER_H
+
+
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc/types_c.h"
@@ -1305,6 +1310,7 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
     cv::Mat bw,bw0;
 
 	cv::cvtColor(tsrc, bw, CV_BGR2GRAY);
+
 	//step1: edge detection
 	cv::Mat pic1;
 	int ddepth = 3;
@@ -1515,7 +1521,7 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
 
 			//cout<<"KL: "<<k<<" "<<l<<endl;
 			if(finalK<0&&finalL<0&&l==vecsize2-1&&k==vecsize1-2){
-				cout<<"BIGBIG"<<endl;
+				//cout<<"BIGBIG"<<endl;
 				lStart = vecsize2;
 				vecsize2 += 150;
 				k = 0;
@@ -1797,3 +1803,4 @@ int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross,  Mat& turned){
 	return 0;
 }
 
+#endif

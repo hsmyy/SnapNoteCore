@@ -41,14 +41,15 @@ public:
 	const static string DENOISE;
 	const static string DESKEW;
 
-	static void usage()
-	{
-		cout<<"Please add parameters:"<<endl;
-		cout<<" -s Single image mode."<<endl;
-		cout<<" -d Directory images mode."<<endl;
-		cout<<" -i Input file or input directory (depends on mode)."<<endl;
-		cout<<" -o OCR output directory."<<endl;
-		cout<<" -c Configuration file path, (method = directory). see sn.conf as an example."<<endl;
+	static void usage() {
+		cout << "Please add parameters:" << endl;
+		cout << " -s Single image mode." << endl;
+		cout << " -d Directory images mode." << endl;
+		cout << " -i Input file or input directory (depends on mode)." << endl;
+		cout << " -o OCR output directory." << endl;
+		cout
+				<< " -c Configuration file path, (method = directory). see sn.conf as an example."
+				<< endl;
 
 	}
 	static void process_main(int argc, char** argv) {
@@ -93,27 +94,32 @@ public:
 				break;
 			}
 		}
-		if (input.empty() || configPath.empty()) {
+		if (input.empty() && configPath.empty()) {
 			usage();
 			return;
 		}
 
 		Config config(configPath);
 
+		char pattern[512] = "[^a-zA-Z0-9]+";
 		if (singleMode) {
-			Mat dst = Processor::processFile(input, config);
+			Mat dst;
+			if (!input.empty())
+				dst = Processor::processFile(input, config);
 
 			if (!ocrOutput.empty()) {
 				string textPath = ocrOutput + "/"
 						+ FileUtil::getFileNameNoSuffix(input) + ".txt";
-				cout<<"OCR ...: "<<textPath<<endl;
-				string text = OCRUtil::ocrFile(dst, "eng+jpn");
+				cout << "OCR to: " << textPath << endl;
+				string text = OCRUtil::ocrFile(dst, "eng+jpn+chi_sim");
 				FileUtil::writeToFile(text, textPath);
 			}
 		} else {
-			Processor::processDir(input, config);
-			if (!ocrOutput.empty()) {
-				OCRUtil::ocrDir(input, ocrOutput, "eng+jpn");
+			if (!input.empty())
+				Processor::processDir(input, config);
+			if (!ocrOutput.empty() && config.size() > 0) {
+				OCRUtil::ocrDir(config.get(config.size() - 1).second, ocrOutput,
+						"eng+jpn+chi_sim");
 			}
 		}
 	}
@@ -121,7 +127,7 @@ public:
 	static Mat processFile(string input, const Config conf) {
 		Config config = conf;
 		Mat img = imread(input);
-		cout<<"Process "<<input<<endl;
+		cout << "Process " << input << endl;
 		string segOut = config.getAndErase(SEG);
 		string salientOut = config.getAndErase(SALIENT);
 		string borderOut = config.getAndErase(BORDER);
@@ -138,20 +144,13 @@ public:
 		string salientOutPath = salientOut + "/" + FileUtil::getFileName(input);
 		string segOutPath = segOut + "/" + FileUtil::getFileName(input);
 
-
 		cout << "salient object..." << endl;
 		src.salient(img, outputSRC, seg);
 		Mat outputFileSRC = convertToVisibleMat<float>(outputSRC);
 		imwrite(segOutPath, seg);
 		imwrite(salientOutPath, outputFileSRC);
-		int res;
-		if (src.isResultUseful(outputSRC)) {
-			res = mainProc(img, outputSRC, 0, crossBD, outputBD);
-		} else {
-			res = mainProc(img, outputSRC, 0, crossBD, outputBD);
-		}
-		if (res == -1)
-			return img;
+		//cout<<outputSRC(Rect(0, 0, 500, 500))<<endl;
+		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
 
 		string borderOutPath = borderOut + "/" + FileUtil::getFileName(input);
 		string turnOutPath = turnOut + "/" + FileUtil::getFileName(input);
@@ -161,6 +160,8 @@ public:
 		outputBD.convertTo(outputBD, CV_8UC1);
 		imwrite(turnOutPath, outputBD);
 
+		if (res == -1)
+			outputBD = img;
 
 		cout << "Preprocessing..." << endl;
 		Mat pre = outputBD;
