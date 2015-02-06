@@ -24,7 +24,7 @@ public:
 
 		d = opendir(path.c_str());
 		if (d == NULL) {
-			cerr << "Couldn't open directory" << endl;
+			cerr << "Couldn't open directory: "<<path.c_str() << endl;
 			return files;
 		}
 

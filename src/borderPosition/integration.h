@@ -9,7 +9,7 @@
 #define BORDERPOSITION_INTEGRATION_H_
 
 #include "opencv2/highgui.hpp"
-
+#include "opencv2/imgproc.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +23,10 @@ using namespace std;
 pair<float,float> coverage(vector<Point2f> borderPoints, Mat salientImg1f);
 
 pair<float,float> coverage(vector<Point2f> borderPoints, Mat salientImg1f){
+
+	if(countNonZero(salientImg1f)<0.2*salientImg1f.cols*salientImg1f.rows)
+		return make_pair(0,0);
+
 	Mat borderImg = Mat::zeros(salientImg1f.size(), CV_8UC1);
 	for (unsigned int j = 0, len = borderPoints.size(); j < len; j++) {
 		line(borderImg, borderPoints[j], borderPoints[(j + 1) % len], Scalar(255), 3, 8);
@@ -44,6 +48,7 @@ pair<float,float> coverage(vector<Point2f> borderPoints, Mat salientImg1f){
 				++borderNum;
 				if(row[x] > 0){
 					++intersectNum;
+					++salientNum;
 				}
 			}else{
 				if(row[x] > 0){
@@ -52,6 +57,7 @@ pair<float,float> coverage(vector<Point2f> borderPoints, Mat salientImg1f){
 			}
 		}
 	}
+	//cout<<"PR: "<<salientNum<<" "<<borderNum<<" "<<intersectNum<<endl;
 	float precision = borderNum > 0 ? intersectNum / (float)borderNum : 0;
 	float recall = salientNum > 0 ? intersectNum / (float)salientNum : 0;
 	return make_pair( precision, recall);

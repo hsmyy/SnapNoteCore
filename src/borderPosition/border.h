@@ -5,8 +5,6 @@
  *      Author: litton
  */
 
-#ifndef IMAGE_PROCESS_SRC_BORDERPOSITION_BORDER_H_
-#define IMAGE_PROCESS_SRC_BORDERPOSITION_BORDER_H_
 
 /**
  * Automatic perspective correction for quadrilateral objects. See the tutorial at
@@ -27,6 +25,7 @@
 #include <sys/types.h>
 #include <strstream>
 #include <fstream>
+#include "integration.h"
 
 using namespace cv;
 
@@ -58,171 +57,96 @@ int THRESHSCALE = 40;//210;
 int MAXLINK = 20;
 
 #define hough_cmp_gt(l1,l2) (aux[l1] > aux[l2])
-#define CV_IMPLEMENT_QSORT_EX( func_name, T, LT, user_data_type )                           \
-		void func_name( T *array, size_t total, user_data_type aux )                        \
-		{                                                                                   \
-		    int isort_thresh = 7;                                                           \
-		    T t;                                                                            \
-		    int sp = 0;                                                                     \
-		                                                                                    \
-		    struct                                                                          \
-		    {                                                                               \
-		        T *lb;                                                                      \
-		        T *ub;                                                                      \
-		    }                                                                               \
-		    stack[48];                                                                      \
-		                                                                                    \
-		    aux = aux;                                                                      \
-		                                                                                    \
-		    if( total <= 1 )                                                                \
-		        return;                                                                     \
-		                                                                                    \
-		    stack[0].lb = array;                                                            \
-		    stack[0].ub = array + (total - 1);                                              \
-		                                                                                    \
-		    while( sp >= 0 )                                                                \
-		    {                                                                               \
-		        T* left = stack[sp].lb;                                                     \
-		        T* right = stack[sp--].ub;                                                  \
-		                                                                                    \
-		        for(;;)                                                                     \
-		        {                                                                           \
-		            int i, n = (int)(right - left) + 1, m;                                  \
-		            T* ptr;                                                                 \
-		            T* ptr2;                                                                \
-		                                                                                    \
-		            if( n <= isort_thresh )                                                 \
-		            {                                                                       \
-		            insert_sort:                                                            \
-		                for( ptr = left + 1; ptr <= right; ptr++ )                          \
-		                {                                                                   \
-		                    for( ptr2 = ptr; ptr2 > left && LT(ptr2[0],ptr2[-1]); ptr2--)   \
-		                        CV_SWAP( ptr2[0], ptr2[-1], t );                            \
-		                }                                                                   \
-		                break;                                                              \
-		            }                                                                       \
-		            else                                                                    \
-		            {                                                                       \
-		                T* left0;                                                           \
-		                T* left1;                                                           \
-		                T* right0;                                                          \
-		                T* right1;                                                          \
-		                T* pivot;                                                           \
-		                T* a;                                                               \
-		                T* b;                                                               \
-		                T* c;                                                               \
-		                int swap_cnt = 0;                                                   \
-		                                                                                    \
-		                left0 = left;                                                       \
-		                right0 = right;                                                     \
-		                pivot = left + (n/2);                                               \
-		                                                                                    \
-		                if( n > 40 )                                                        \
-		                {                                                                   \
-		                    int d = n / 8;                                                  \
-		                    a = left, b = left + d, c = left + 2*d;                         \
-		                    left = LT(*a, *b) ? (LT(*b, *c) ? b : (LT(*a, *c) ? c : a))     \
-		                                      : (LT(*c, *b) ? b : (LT(*a, *c) ? a : c));    \
-		                                                                                    \
-		                    a = pivot - d, b = pivot, c = pivot + d;                        \
-		                    pivot = LT(*a, *b) ? (LT(*b, *c) ? b : (LT(*a, *c) ? c : a))    \
-		                                      : (LT(*c, *b) ? b : (LT(*a, *c) ? a : c));    \
-		                                                                                    \
-		                    a = right - 2*d, b = right - d, c = right;                      \
-		                    right = LT(*a, *b) ? (LT(*b, *c) ? b : (LT(*a, *c) ? c : a))    \
-		                                      : (LT(*c, *b) ? b : (LT(*a, *c) ? a : c));    \
-		                }                                                                   \
-		                                                                                    \
-		                a = left, b = pivot, c = right;                                     \
-		                pivot = LT(*a, *b) ? (LT(*b, *c) ? b : (LT(*a, *c) ? c : a))        \
-		                                   : (LT(*c, *b) ? b : (LT(*a, *c) ? a : c));       \
-		                if( pivot != left0 )                                                \
-		                {                                                                   \
-		                    CV_SWAP( *pivot, *left0, t );                                   \
-		                    pivot = left0;                                                  \
-		                }                                                                   \
-		                left = left1 = left0 + 1;                                           \
-		                right = right1 = right0;                                            \
-		                                                                                    \
-		                for(;;)                                                             \
-		                {                                                                   \
-		                    while( left <= right && !LT(*pivot, *left) )                    \
-		                    {                                                               \
-		                        if( !LT(*left, *pivot) )                                    \
-		                        {                                                           \
-		                            if( left > left1 )                                      \
-		                                CV_SWAP( *left1, *left, t );                        \
-		                            swap_cnt = 1;                                           \
-		                            left1++;                                                \
-		                        }                                                           \
-		                        left++;                                                     \
-		                    }                                                               \
-		                                                                                    \
-		                    while( left <= right && !LT(*right, *pivot) )                   \
-		                    {                                                               \
-		                        if( !LT(*pivot, *right) )                                   \
-		                        {                                                           \
-		                            if( right < right1 )                                    \
-		                                CV_SWAP( *right1, *right, t );                      \
-		                            swap_cnt = 1;                                           \
-		                            right1--;                                               \
-		                        }                                                           \
-		                        right--;                                                    \
-		                    }                                                               \
-		                                                                                    \
-		                    if( left > right )                                              \
-		                        break;                                                      \
-		                    CV_SWAP( *left, *right, t );                                    \
-		                    swap_cnt = 1;                                                   \
-		                    left++;                                                         \
-		                    right--;                                                        \
-		                }                                                                   \
-		                                                                                    \
-		                if( swap_cnt == 0 )                                                 \
-		                {                                                                   \
-		                    left = left0, right = right0;                                   \
-		                    goto insert_sort;                                               \
-		                }                                                                   \
-		                                                                                    \
-		                n = MIN( (int)(left1 - left0), (int)(left - left1) );               \
-		                for( i = 0; i < n; i++ )                                            \
-		                    CV_SWAP( left0[i], left[i-n], t );                              \
-		                                                                                    \
-		                n = MIN( (int)(right0 - right1), (int)(right1 - right) );           \
-		                for( i = 0; i < n; i++ )                                            \
-		                    CV_SWAP( left[i], right0[i-n+1], t );                           \
-		                n = (int)(left - left1);                                            \
-		                m = (int)(right1 - right);                                          \
-		                if( n > 1 )                                                         \
-		                {                                                                   \
-		                    if( m > 1 )                                                     \
-		                    {                                                               \
-		                        if( n > m )                                                 \
-		                        {                                                           \
-		                            stack[++sp].lb = left0;                                 \
-		                            stack[sp].ub = left0 + n - 1;                           \
-		                            left = right0 - m + 1, right = right0;                  \
-		                        }                                                           \
-		                        else                                                        \
-		                        {                                                           \
-		                            stack[++sp].lb = right0 - m + 1;                        \
-		                            stack[sp].ub = right0;                                  \
-		                            left = left0, right = left0 + n - 1;                    \
-		                        }                                                           \
-		                    }                                                               \
-		                    else                                                            \
-		                        left = left0, right = left0 + n - 1;                        \
-		                }                                                                   \
-		                else if( m > 1 )                                                    \
-		                    left = right0 - m + 1, right = right0;                          \
-		                else                                                                \
-		                    break;                                                          \
-		            }                                                                       \
-		        }                                                                           \
-		    }                                                                               \
-		}
-static CV_IMPLEMENT_QSORT_EX( icvHoughSortDescent32s, int, hough_cmp_gt, const int* )
 
+int lineScore[2][30];
+int anglScore[2][30];
+int spaceScore[2][30];
+int areaScore[2][30];
+int scoreCur[2]={0,0};
+vector<int> tLineScore;
+vector<double> tAnglScore;
+vector<int> tAreaScore;
+vector<double> tSpaceScore;
+int curphase = 0;
+int topRank[40];
+int finalRank[20];
+int spaceRank[20];
+int angleRank[20];
+int spaceRankDic[20];
+int angleRankDic[20];
+bool doubt = true;
+
+void distance(Point2f p1, Point2f p2, double& db){
+	db = sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y));
+}
+
+void getAng(double a, double b, double c, double& db){
+	db = acos((a*a+b*b-c*c)/(2*a*b));
+}
+
+int countSmall(double ang0,double ang1,double ang2,double ang3){
+
+	//60 is too small...70 is ok!
+	int ret = 0;
+	if(ang0<6*CV_PI/18)
+		ret++;
+	if(ang1<6*CV_PI/18)
+		ret++;
+	if(ang2<6*CV_PI/18)
+		ret++;
+	if(ang3<6*CV_PI/18)
+		ret++;
+	return ret;
+}
+
+int compareAngleScore(const void * a, const void * b){
+	int ai = *(int*)a;
+	int bi = *(int*)b;
+
+	int scorea = tAnglScore[topRank[ai]];
+	int scoreb = tAnglScore[topRank[bi]];
+
+	return scorea-scoreb;
+}
+
+int compareSpaceScore(const void * a, const void * b){
+	int ai = *(int*)a;
+	int bi = *(int*)b;
+
+	int scorea = tSpaceScore[topRank[ai]];
+	int scoreb = tSpaceScore[topRank[bi]];
+
+	return scoreb-scorea;
+}
+
+int compareFinalScore(const void * a, const void * b){
+	//return 0;
+	int ai = *(int*)a;
+	int bi = *(int*)b;
+
+	int scorea = spaceRankDic[ai]*angleRankDic[ai];
+	int scoreb = spaceRankDic[bi]*angleRankDic[bi];
+
+	return scorea-scoreb;
+}
+
+int compareTopScore (const void * a, const void * b)
+{
+	int ai = *(int*)a;
+	int bi = *(int*)b;
+
+	if(tAreaScore[ai]<tAreaScore[bi])
+		return 1;
+	if(tAreaScore[ai]>tAreaScore[bi])
+		return -1;
+
+	if(tLineScore[ai]<tLineScore[bi])
+		return 1;
+	if(tLineScore[ai]>tLineScore[bi])
+		return -1;
+
+	return 0;
+}
 
 cv::Point2f center(0,0);
 
@@ -244,92 +168,6 @@ cv::Point2d computeIntersect(cv::Vec4i a,
 	}
 	else
 		return cv::Point2f(-12345, -12345);
-}
-
-static void
-icvHoughLinesStandard2( const CvMat* img, float rho, float theta,
-                       int threshold, CvSeq *lines, int linesMax )
-{
-    cv::AutoBuffer<int> _accum, _sort_buf;
-    cv::AutoBuffer<float> _tabSin, _tabCos;
-
-    const uchar* image;
-    int step, width, height;
-    int numangle, numrho;
-    int total = 0;
-    float ang;
-    int r, n;
-    int i, j;
-    float irho = 1 / rho;
-    double scale;
-
-    CV_Assert( CV_IS_MAT(img) && CV_MAT_TYPE(img->type) == CV_8UC1 );
-
-    image = img->data.ptr;
-    step = img->step;
-    width = img->cols;
-    height = img->rows;
-
-    numangle = cvRound(CV_PI / theta);
-    numrho = cvRound(((width + height) * 2 + 1) / rho);
-
-    _accum.allocate((numangle+2) * (numrho+2));
-    _sort_buf.allocate(numangle * numrho);
-    _tabSin.allocate(numangle);
-    _tabCos.allocate(numangle);
-    int *accum = _accum, *sort_buf = _sort_buf;
-    float *tabSin = _tabSin, *tabCos = _tabCos;
-
-    memset( accum, 0, sizeof(accum[0]) * (numangle+2) * (numrho+2) );
-
-    for( ang = 0, n = 0; n < numangle; ang += theta, n++ )
-    {
-        tabSin[n] = (float)(sin(ang) * irho);
-        tabCos[n] = (float)(cos(ang) * irho);
-    }
-
-    // stage 1. fill accumulator
-    for( i = 0; i < height; i++ )
-        for( j = 0; j < width; j++ )
-        {
-            if( image[i * step + j] != 0 )
-                for( n = 0; n < numangle; n++ )
-                {
-                    r = cvRound( j * tabCos[n] + i * tabSin[n] );
-                    r += (numrho - 1) / 2;
-                    accum[(n+1) * (numrho+2) + r+1]++;
-                }
-        }
-
-    // stage 2. find local maximums
-    for( r = 0; r < numrho; r++ )
-        for( n = 0; n < numangle; n++ )
-        {
-            int base = (n+1) * (numrho+2) + r+1;
-            if( accum[base] > threshold &&
-                accum[base] > accum[base - 1] && accum[base] >= accum[base + 1] &&
-                accum[base] > accum[base - numrho - 2] && accum[base] >= accum[base + numrho + 2] )
-                sort_buf[total++] = base;
-        }
-
-    // stage 3. sort the detected lines by accumulator value
-    icvHoughSortDescent32s( sort_buf, total, accum );
-
-    // stage 4. store the first min(total,linesMax) lines to the output buffer
-    linesMax = MIN(linesMax, total);
-    scale = 1./(numrho+2);
-    for( i = 0; i < linesMax; i++ )
-    {
-        CvLinePolar2 line;
-        int idx = sort_buf[i];
-        int n = cvFloor(idx*scale) - 1;
-        int r = idx - (n+1)*(numrho+2) - 1;
-        line.rho = (r - (numrho - 1)*0.5f) * rho;
-        line.angle = n * theta;
-        line.votes = accum[idx];
-        cvSeqPush( lines, &line );
-    }
-    //TODO garbage collection
 }
 
 void sortCorners(std::vector<cv::Point2f>& corners,
@@ -408,95 +246,6 @@ void pointToVecP(cv::Point2f pt, double* v3){
 	//return v3;
 }
 
-CV_IMPL CvSeq*
-cvHoughLines3( CvArr* src_image, void* lineStorage, int method,
-               double rho, double theta, int threshold,
-               double param1, double param2 )
-{
-
-    CvSeq* result = 0;
-
-    CvMat stub, *img = (CvMat*)src_image;
-    CvMat* mat = 0;
-    CvSeq* lines = 0;
-    CvSeq lines_header;
-    CvSeqBlock lines_block;
-    int lineType, elemSize;
-    int linesMax = INT_MAX;
-    int iparam1, iparam2;
-
-    img = cvGetMat( img, &stub );
-
-    if( !CV_IS_MASK_ARR(img))
-        CV_Error( CV_StsBadArg, "The source image must be 8-bit, single-channel" );
-
-    if( !lineStorage )
-        CV_Error( CV_StsNullPtr, "NULL destination" );
-
-    if( rho <= 0 || theta <= 0 || threshold <= 0 )
-        CV_Error( CV_StsOutOfRange, "rho, theta and threshold must be positive" );
-
-    if( method != CV_HOUGH_PROBABILISTIC )
-    {
-        lineType = CV_32FC3;
-        elemSize = sizeof(float)*3;
-    }
-    else
-    {
-        lineType = CV_32SC4;
-        elemSize = sizeof(int)*4;
-    }
-
-    if( CV_IS_STORAGE( lineStorage ))
-    {
-        lines = cvCreateSeq( lineType, sizeof(CvSeq), elemSize, (CvMemStorage*)lineStorage );
-    }
-    else if( CV_IS_MAT( lineStorage ))
-    {
-        mat = (CvMat*)lineStorage;
-
-        if( !CV_IS_MAT_CONT( mat->type ) || (mat->rows != 1 && mat->cols != 1) )
-            CV_Error( CV_StsBadArg,
-            "The destination matrix should be continuous and have a single row or a single column" );
-
-        if( CV_MAT_TYPE( mat->type ) != lineType )
-            CV_Error( CV_StsBadArg,
-            "The destination matrix data type is inappropriate, see the manual" );
-
-        lines = cvMakeSeqHeaderForArray( lineType, sizeof(CvSeq), elemSize, mat->data.ptr,
-                                         mat->rows + mat->cols - 1, &lines_header, &lines_block );
-        linesMax = lines->total;
-        cvClearSeq( lines );
-    }
-    else
-        CV_Error( CV_StsBadArg, "Destination is not CvMemStorage* nor CvMat*" );
-
-    iparam1 = cvRound(param1);
-    iparam2 = cvRound(param2);
-
-    switch( method )
-    {
-    case CV_HOUGH_STANDARD:
-
-          icvHoughLinesStandard2( img, (float)rho,
-                (float)theta, threshold, lines, linesMax );
-          break;
-
-    default:
-        CV_Error( CV_StsBadArg, "Unrecognized method id" );
-    }
-    if( mat )
-    {
-        if( mat->cols > mat->rows )
-            mat->cols = lines->total;
-        else
-            mat->rows = lines->total;
-    }
-    else
-        result = lines;
-    return result;
-}
-
 double dist(cv::Point2d p1, cv::Point2d p2){
 	return sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y));
 }
@@ -556,191 +305,6 @@ bool hasPixel(cv::Mat& mat, int thresh) {
 			}
 		}
 	}
-	return false;
-}
-
-bool hasInterBlack(cv::Mat& mat, bool debug) {
-
-	bool flag1 = true;
-	Mat rowTop = mat.row(0);
-	uchar* p = rowTop.ptr<uchar>(0);
-
-	for (int j = 0; j < mat.cols; ++j) {
-
-		if (p[j] > 40) {
-			flag1 = false;
-			break;
-		}
-	}
-
-	bool flag2 = true;
-	Mat rowBot = mat.row(mat.rows-1);
-
-	p = rowBot.ptr<uchar>(0);
-	for (int j = 0; j < mat.cols; ++j) {
-
-		if (p[j] > 40) {
-			flag2 = false;
-			break;
-		}
-	}
-
-	if(flag1&&flag2) return true;
-
-	bool flag3 = true;
-	Mat colL = mat.col(0);
-
-	p = colL.ptr<uchar>(0);
-	for (int j = 0; j < mat.rows*mat.cols; j+=mat.cols) {
-
-		if (p[j] > 40) {
-			flag3 = false;
-			break;
-		}
-	}
-
-	bool flag4 = true;
-	Mat colR = mat.col(mat.cols-1);
-	p = colR.ptr<uchar>(0);
-	for (int j = 0; j < mat.rows*mat.cols; j+=mat.cols) {
-
-		if (p[j] > 40) {
-			flag4 = false;
-			break;
-		}
-	}
-	if(flag3&&flag4) return true;
-	return false;
-}
-
-bool hasBlackBorder(cv::Mat& mat, bool debug) {
-
-	bool flag = true;
-	Mat rowTop = mat.row(0);
-	uchar* p = rowTop.ptr<uchar>(0);
-
-	for (int j = 0; j < mat.cols; ++j) {
-
-		if (p[j] > 40) {
-			flag = false;
-			break;
-		}
-	}
-
-	if(flag) return true;
-
-	flag = true;
-	Mat rowBot = mat.row(mat.rows-1);
-
-	p = rowBot.ptr<uchar>(0);
-	for (int j = 0; j < mat.cols; ++j) {
-
-		if (p[j] > 40) {
-			flag = false;
-			break;
-		}
-	}
-
-	if(flag) return true;
-	flag = true;
-	Mat colL = mat.col(0);
-
-	p = colL.ptr<uchar>(0);
-	for (int j = 0; j < mat.rows*mat.cols; j+=mat.cols) {
-
-		if (p[j] > 40) {
-			flag = false;
-			break;
-		}
-	}
-	if(flag) return true;
-
-	flag = true;
-	Mat colR = mat.col(mat.cols-1);
-	p = colR.ptr<uchar>(0);
-	for (int j = 0; j < mat.rows*mat.cols; j+=mat.cols) {
-
-		if (p[j] > 40) {
-			flag = false;
-			break;
-		}
-	}
-	return flag;
-}
-
-map<int, int> blackScore;
-bool isBlackBorder(cv::Mat& mat, cv::Point pt1, cv::Point pt2, int threshhold, int size, int mode, int id) {
-	if (mat.channels() != 1) {
-		CV_Error(CV_StsBadArg, "Mat should be gray image.");
-	}
-	if (size < 1) {
-		CV_Error(CV_StsBadArg, "Size should be positive");
-	}
-	//std::cout<<"points "<<pt1.x<<"-"<<pt1.y<<","<<pt2.x<<"-"<<pt2.y<<std::endl;
-
-	CvMat src = mat;
-	cv::Mat dstMat = cv::Mat::zeros(size, size, CV_8UC1);
-	CvMat dst = dstMat;
-	CvLineIterator iterator;
-	int count = cvInitLineIterator(&src, pt1, pt2, &iterator, 8);
-
-	int maxLink = 0;
-	int link = 0;
-
-	int interLink=0;
-	int maxInter =0;
-	//cout<<"test grad "<<(int)grad_y.at<char>(843,0)<<" "<<(int)grad_y.at<char>(843,1)<<" "<<(int)grad_y.at<char>(843,2)<<" "<<(int)grad_y.at<char>(843,3)<<endl;
-	//cout<<count<<" "<<size<<endl;
-	while (count--) {
-		CV_NEXT_LINE_POINT(iterator);
-		/* print the pixel coordinates: demonstrates how to calculate the coordinates */
-		int offset, x, y;
-		/* assume that ROI is not set, otherwise need to take it into account. */
-		offset = iterator.ptr - src.data.ptr;
-		y = offset / src.step;
-		x = (offset - y * src.step) / sizeof(uchar);
-
-		CvPoint2D32f ptr = cvPoint2D32f(x, y);
-		cvGetRectSubPix(&src, &dst, ptr);
-
-		cv::Mat I = cv::cvarrToMat(&dst);
-		//cout<<"x: " << x << ", y:" <<y<<endl;
-
-
-		bool debug = false;
-
-		if (!hasBlackBorder(I,debug)||hasInterBlack(I,debug)) {
-
-			maxLink = std::max(maxLink, link);
-			link = 0;
-
-		} else {
-			link++;
-		}
-
-		if (!hasInterBlack(I,debug)) {
-
-			maxInter = std::max(maxInter, interLink);
-			interLink = 0;
-
-		} else {
-			interLink++;
-		}
-	}
-
-	maxLink =max(maxLink,link);
-	maxInter=max(maxInter,interLink);
-	if(mode==1&&maxInter>=10){//20
-		cout<<"inter black "<<maxInter<<endl;
-		return false;
-	}
-	if (mode==1&&maxLink >= 65)//20
-	{
-		std::cout<<"yes black_border "<<maxLink<<"; inter black "<<maxInter<<std::endl;
-		blackScore[id]=maxLink;
-		return true;
-	}
-	cout<<"no black_border "<<maxLink<<std::endl;
 	return false;
 }
 
@@ -906,12 +470,145 @@ void sortLines(CvSeq* lines){
 	qsort(lineSorted, min(5000,lines->total), sizeof(int), compareLineScore);
 }
 
+vector<Vec4i> lines1;
+
+bool nosimilar(CvLinePolar2 line, CvSeq* seq){
+	for( int i=0; i < lines->total; i++ )
+	{
+		CvLinePolar2* line2 = (CvLinePolar2*)cvGetSeqElem(lines,i);
+		if(fabs(line2->angle-line.angle)<CV_PI/36&&fabs(line2->rho-line.rho)<5)
+		{
+			//cout<<"found similar "<<line.score<<" "<<line2->score<<endl;
+			if(line.score>line2->score){
+				line2->score=line.score;
+				line2->x1 = line.x1;
+				line2->y1 = line.y1;
+				line2->x2 = line.x2;
+				line2->y2 = line.y2;
+				line2->angle = line.angle;
+				line2->rho = line.rho;
+				line2->votes = line.votes;
+				CvLinePolar2* line3 = (CvLinePolar2*)cvGetSeqElem(lines,i);
+
+				//cout<<"score change "<<line3->score<<endl;
+			}
+			return false;
+		}
+	}
+	//cout<<"no similar "<<line.score<<endl;
+	return true;
+}
+
+int calcAreaScore(float p, float r){
+	if(p==0||r==0) return 0;
+	double fv = 2*p*r/(p+r);
+	int fvi = (int)fv;
+	return fvi/10;
+}
+
+int myAngleScore(double a1, double a2, double a3, double a4){
+
+	double ang[4];
+	ang[0]=a1;
+	ang[1]=a2;
+	ang[2]=a3;
+	ang[3]=a4;
+
+	for(int i=0;i<4;i++){
+		for(int j=i+1;j<4;j++){
+			if(ang[i]<ang[j]){
+				double swap = ang[i];
+				ang[i]=ang[j];
+				ang[j]=swap;
+			}
+		}
+	}
+
+	return 1+((int)((max(fabs(ang[0]-ang[1]),fabs(ang[2]-ang[3]))*36/CV_PI)));
+}
+
+bool doubtShape(vector<cv::Point2f> corners, Mat slt){
+
+	double d01; distance(corners[0],corners[1], d01);
+	double d12; distance(corners[1],corners[2], d12);
+	double d23; distance(corners[2],corners[3], d23);
+	double d30; distance(corners[3],corners[0], d30);
+	double d02; distance(corners[0],corners[2], d02);
+	double d13; distance(corners[1],corners[3], d13);
+
+	double ang0; getAng(d01,d30,d13, ang0);
+	double ang1; getAng(d01,d12,d02, ang1);
+	double ang2; getAng(d12,d23,d13, ang2);
+	double ang3; getAng(d23,d30,d02, ang3);
+
+//	std::ostringstream strs;
+//	strs << ang0 <<"_"<<ang1<<"_"<<ang2<<"_"<<ang3;
+//	std::string str = strs.str();
+//
+//	string angs = "_angs_"+str;
+	if(min(d01,d23)<50)
+	{
+//		reason = "R1"+angs;
+		return true;
+	}
+
+	if(max(d30,d12)/min(d01,d23)>2)
+	{
+//		reason = "R2"+angs;
+		return true;
+	}
+
+	if(ang0<8*CV_PI/18&&ang3<8*CV_PI/18&&2*d12<d30)
+	{
+//		reason ="R3"+angs;
+		return true;
+	}
+
+	if(ang1<CV_PI/2&&ang2<CV_PI/2&&2*d30<d12)
+	{
+//		reason ="R4"+angs;
+		return true;
+	}
+
+	if(ang0<CV_PI/2&&ang1<CV_PI/2&&2*d23<d01)
+	{
+//		reason = "R5"+angs;
+		return true;
+	}
+
+	if(ang2<CV_PI/2&&ang3<CV_PI/2&&2*d01<d23)
+	{
+//		reason = "R6"+angs;
+		return true;
+	}
+
+	int smallCount = countSmall(ang0,ang1,ang2,ang3);
+	if(smallCount==1){
+		//reason = "R7"+angs;
+		return true;
+	}
+
+	pair<float,float> pr = coverage(corners, slt);
+//	cout<<"PR "<<pr.first<<" "<<pr.second<<endl;
+	//
+	//	if(pr.first>0&&pr.first<0.9) return true;
+	if(pr.first>0.9&&pr.second>0&&pr.second<0.7) { return true;}
+	if(pr.first>0.85&&pr.second>0.85) doubt = false;
+	//reason = "";
+	anglScore[curphase][scoreCur[curphase]] = myAngleScore(ang0,ang1,ang2,ang3);
+
+	areaScore[curphase][scoreCur[curphase]] = calcAreaScore(pr.first,pr.second);
+    spaceScore[curphase][scoreCur[curphase]] = (d01+d12+d23+d30);
+	return false;
+}
+
 CV_IMPL CvSeq*
 convertToPolar(std::vector<cv::Vec4i> lines0, CvMemStorage* storage, cv::Mat pic1){
 	int count = 0;
 	int lineType = CV_32FC(8);
 	int elemSize = sizeof(float)*8;
 
+	lines1.clear();
 	lines = cvCreateSeq( lineType, sizeof(CvSeq), elemSize, storage );
 	int recMaxLink = MAXLINK;
 	for(int i=0;i<lines0.size();i++){
@@ -924,7 +621,7 @@ convertToPolar(std::vector<cv::Vec4i> lines0, CvMemStorage* storage, cv::Mat pic
 
 		//cout<<"x-y: "<<line.x1<<","<<line.y1<<","<<line.x2<<","<<line.y2<<endl;
 		if(lines0[i][1]==lines0[i][3]){
-			line.angle = lines0[0][1]>=0?CV_PI/2:3*CV_PI/2;
+			line.angle = lines0[i][1]>=0?CV_PI/2:3*CV_PI/2;
 			line.rho = fabs(line.y1);
 		}
 		else{
@@ -942,30 +639,23 @@ convertToPolar(std::vector<cv::Vec4i> lines0, CvMemStorage* storage, cv::Mat pic
 				line.angle = CV_PI + line.angle;
 			if(x3>0&&y3<0)
 				line.angle = 2*CV_PI+line.angle;
-			//cout<<"poi: "<<x3<<" "<<y3<<" "<<k<<" "<<atan(k)<<endl;
-			//cout<<"pol: "<<line.rho<<" "<<line.angle<<endl;
+
 		}
 
-		MAXLINK = 20;
+
+		MAXLINK = 10;//20;
 		double linkScore = 0.0;
 		double linkSpace = 0.0;
 		if(isLine(pic1, linkScore, linkSpace, cv::Point(lines0[i][0],lines0[i][1]), cv::Point(lines0[i][2],lines0[i][3]), 2, 1, 1, 0,true))
 		{
 
-			line.score = linkScore + sqrt((line.x1-line.x2)*(line.x1-line.x2)+(line.y1-line.y2)*(line.y1-line.y2));
-			//cout<<"score: "<<line.score<<endl;
-			/*
-			Mat pic11 = pic1.clone();
-			cv::line( pic11, cv::Point(lines0[i][0],lines0[i][1]), cv::Point(lines0[i][2],lines0[i][3]), CV_RGB(255,255,255),2);
-
-			//Size sz = Size(pic11.cols*2/5,pic11.rows*2/5);
-			//Mat pic3 = Mat(sz,CV_32S);
-			//cv::resize(pic11, pic3, sz);
-			//cv::imshow("image", pic3);
-			cv::imshow("image", pic11);
-			cv::waitKey();
-*/
+			//cout<<"scores "<<linkScore<<" "<<sqrt((line.x1-line.x2)*(line.x1-line.x2)+(line.y1-line.y2)*(line.y1-line.y2))<<endl;
+			line.score = linkScore + sqrt((line.x1-line.x2)*(line.x1-line.x2)+(line.y1-line.y2)*(line.y1-line.y2))/5;
+			if(nosimilar(line,lines)){
+			lines1.push_back(lines0[i]);
 			cvSeqPush( lines, &line );
+			//cout<<"lines increase "<<lines->total<<endl;
+			}
 		}
 	}
 	MAXLINK = recMaxLink;
@@ -983,20 +673,37 @@ bool notRectLineLv2(float angle,float rho){
 		return false;
 	return true;
 }
+struct quadrNode{
+	int k;
+	int l;
+	int score;
+	friend bool operator< (quadrNode n1, quadrNode n2){
+		return n1.score < n2.score;
+	}
+};
 //TODO detect the qudrangle a real one or fake one, with the continuing points
-bool isRealQuadr(cv::Mat pic, cv::Vec4i xylines[], int thresh, int size, int procMode, double& score, bool debug){
+bool isRealQuadr(cv::Mat pic, cv::Vec4i xylines[], Vec4i lineSeg[], int thresh, int size, int procMode, double& score, bool debug, int k, int l, priority_queue<quadrNode>& qn){
 
 	cv::Point2f pt[4];
-
+	thresh = 7;
+	size = 2;
 	if(debug)
 		cout<<"[DEBUG] "<<thresh<<" "<<size<<endl;
-	for(int n=0;n<4;n++)
-		pt[n] = computeIntersect(xylines[n/2], xylines[2+n%2]);
 
+	for(int n=0;n<4;n++){
+		pt[n] = computeIntersect(xylines[n/2], xylines[2+n%2]);
+		if(debug){
+			cout<<"inter point "<<n<<": "<<pt[n].x<<" "<<pt[n].y<<endl;
+		}
+	}
 	int THRESHOLD = thresh;
 	int SIZE = size;
 	double dd1,dd2,dd3,dd4;
 	double dx1,dx2,dx3,dx4;
+	if(debug)
+	for(int i=0;i<4;i++){
+		cout<<"xianduan "<<i<<": "<<lineSeg[i][0]<<" "<<lineSeg[i][1]<<" "<<lineSeg[i][2]<<" "<<lineSeg[i][4]<<endl;
+	}
 
 	if(!isLine(pic,dd1,dx1,pt[0],pt[1],THRESHOLD,SIZE,2,procMode,debug))
 		return false;
@@ -1007,9 +714,16 @@ bool isRealQuadr(cv::Mat pic, cv::Vec4i xylines[], int thresh, int size, int pro
 	if(!isLine(pic,dd4,dx4,pt[1],pt[3],THRESHOLD,SIZE,2,procMode,debug))
 		return false;
 
-	score = (dd1+dd2+dd3+dd4)/(dx1+dx2+dx3+dx4);
+	score = (dd1+dd2+dd3+dd4);///(dx1+dx2+dx3+dx4);
+	//score = dd1/dx1+dd2/dx2+dd3/dx3+dd4/dx4;
 	if(debug) cout<<(dd1+dd2+dd3+dd4)<<" "<<(dx1+dx2+dx3+dx4)<<endl;
-	//std::cout<<"true quadr"<<std::endl;
+
+	std::cout<<"true quadr"<<std::endl;
+	quadrNode n;
+	n.k = k;
+	n.l = l;
+	n.score = score;
+	qn.push(n);
 	return true;
 }
 
@@ -1197,10 +911,189 @@ void drawInnerBorder(Mat& src, double k, int x0, int y0){
 	line( src, points[p1], points[p2], CV_RGB(0,255,0),6);
 }
 
-void showResult(Mat& src, Mat& cross, Mat& turned){
+void drawResult(Mat src, Mat& dist, vector<cv::Point2f> corners){
+
+	dist = src.clone();
+	cv::circle(dist, corners[0], 3, CV_RGB(255,0,0), 6);
+	cv::circle(dist, corners[1], 3, CV_RGB(0,255,0), 6);
+	cv::circle(dist, corners[2], 3, CV_RGB(0,0,255), 6);
+	cv::circle(dist, corners[3], 3, CV_RGB(255,255,255), 6);
+
+	line( dist, corners[0], corners[1], CV_RGB(0,255,0),4);
+	line( dist, corners[1], corners[2], CV_RGB(0,255,0),4);
+	line( dist, corners[2], corners[3], CV_RGB(0,255,0),4);
+	line( dist, corners[3], corners[0], CV_RGB(0,255,0),4);
+
+}
+
+void turnImage(Mat& src, Mat& turned, vector<Point2f> corners, double scale){
+	/**/
+	for(int i=0;i<4;i++){
+		corners[i].x /= scale;
+		corners[i].y /= scale;
+	}
+
+	//turn the angle
+	double u0 = src.cols/2.0;
+	double v0 = src.rows/2.0;
+
+	double mp1[3];
+	pointToVecP(corners[3],mp1);
+	double mp2[3];
+	pointToVecP(corners[2],mp2);
+	double mp3[3];
+	pointToVecP(corners[0],mp3);
+	double mp4[3];
+	pointToVecP(corners[1],mp4);
+
+	double cha14[3],cha24[3],cha34[3];
+//	cout<<"mp1: "<<mp1[0]<<", "<<mp1[1]<<", "<<mp1[2]<<endl;
+//	cout<<"mp2: "<<mp2[0]<<", "<<mp2[1]<<", "<<mp2[2]<<endl;
+//	cout<<"mp3: "<<mp3[0]<<", "<<mp3[1]<<", "<<mp3[2]<<endl;
+//	cout<<"mp4: "<<mp4[0]<<", "<<mp4[1]<<", "<<mp4[2]<<endl;
+	chacheng(mp1,mp4,cha14,3);
+	chacheng(mp2,mp4,cha24,3);
+	chacheng(mp3,mp4,cha34,3);
+	double k2 = diancheng(cha14,mp3,3)/diancheng(cha24,mp3,3);
+	double k3 = diancheng(cha14,mp2,3)/diancheng(cha34,mp2,3);
+
+//	std::cout<<"k2k3 "<<k2<<" "<<k3<<std::endl;
+	double n2[3],n3[3];
+	for(int i=0;i<3;i++){
+		n2[i] = k2*mp2[i]-mp1[i];
+		n3[i] = k3*mp3[i]-mp1[i];
+	}
+//	cout<<"n2: ";
+//	for(int i=0;i<3;i++)
+//		cout<<n2[i]<<",";
+//	cout<<endl;
+//	cout<<"n3: ";
+	for(int i=0;i<3;i++)
+		cout<<n3[i]<<",";
+	cout<<endl;
+	double fk1 = -(1.0/(n2[2]*n3[2]));
+	double fk2 = n2[0]*n3[0]-(n2[0]*n3[2]+n2[2]*n3[0])*u0+n2[2]*n3[2]*u0*u0;
+	double fk3 = n2[1]*n3[1]-(n2[1]*n3[2]+n2[2]*n3[1])*v0+n2[2]*n3[2]*v0*v0;
+	double f2 = fk1*(fk2+fk3);
+
+//	std::cout<<"f2 "<<f2<<std::endl;
+
+	double bl1 = (n2[0]-n2[2]*u0)*n2[0]+(n2[1]-n2[2]*v0)*n2[1]+(u0*u0+v0*v0+f2)*n2[2]*n2[2]-(u0*n2[0]+v0*n2[1])*n2[2];
+	double bl2 = (n3[0]-n3[2]*u0)*n3[0]+(n3[1]-n3[2]*v0)*n3[1]+(u0*u0+v0*v0+f2)*n3[2]*n3[2]-(u0*n3[0]+v0*n3[1])*n3[2];
+
+	double factor = 2;
+
+	double bl0 = max(fabs(mp1[0]-mp2[0]),fabs(mp3[0]-mp4[0]))/max(fabs(mp1[1]-mp3[1]),fabs(mp2[1]-mp4[1]));
+	double bl = bl0;
+
+	if(bl1*bl2>0)
+		bl = sqrt(bl1/bl2);
+
+	if(bl0>0&&bl<0||bl0<0&&bl>0)
+		bl = bl0;
+
+	if(bl>3||bl<0.3)
+		bl = bl0;
+
+	std::cout<<"bl0 "<<bl0<<",bl1 "<<bl1<<",bl2 "<<bl2<<",bl "<<bl<<std::endl;
+
+	int width = src.cols>bl*src.rows?src.cols:bl*src.rows;
+	int height = (int)(width/bl);
+
+	cv::Mat quad = cv::Mat::zeros(height, width, CV_8UC3);
+	std::vector<cv::Point2f> quad_pts;
+	quad_pts.push_back(cv::Point2f(0, 0));
+	quad_pts.push_back(cv::Point2f(quad.cols, 0));
+	quad_pts.push_back(cv::Point2f(quad.cols, quad.rows));
+	quad_pts.push_back(cv::Point2f(0, quad.rows));
+
+	cv::Mat transmtx = cv::getPerspectiveTransform(corners, quad_pts);
+	cv::warpPerspective(src, quad, transmtx, quad.size());
+	turned = quad.clone();
+}
+
+void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses, priority_queue<quadrNode>& qn, vector<OppositeLines> opplineVector){
 	//output it
 	std::vector<cv::Point2f> corners;
-	//cout<<"size "<<src.cols<<" "<<src.rows<<endl;
+//	cout<<"size "<<src.cols<<" "<<src.rows<<endl;
+//	cout<<"qn size "<<qn.size()<<endl;
+
+	int mscore = qn.top().score;
+
+	vector<quadrNode> top10;
+	for(int i=0;qn.size()>0&&(i<20||qn.top().score>mscore/3);i++){
+		top10.push_back(qn.top());
+		qn.pop();
+	}
+	qn.empty();
+	int doubtCount = 0;
+	int i0 = 0;
+	for (;i0<top10.size()&&i0<30;i0++){
+		corners.clear();
+		int finalK = top10[i0].k;
+		int finalL = top10[i0].l;
+
+		Mat dist = src.clone();
+		CvLinePolar2* line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[finalK].one);
+		float rho = line->rho, theta = line->angle;
+		cv::Point pt1, pt2;
+		double a = cos(theta), b = sin(theta);
+		double x0 = a*rho, y0 = b*rho;
+		pt1.x = cvRound(x0 + 1000*(-b));
+		pt1.y = cvRound(y0 + 1000*(a));
+		pt2.x = cvRound(x0 - 1000*(-b));
+		pt2.y = cvRound(y0 - 1000*(a));
+		finalines[0][0] = pt1.x; finalines[0][1]=pt1.y; finalines[0][2] = pt2.x; finalines[0][3]=pt2.y;
+		//cv::line( dist, pt1, pt2, CV_RGB(0,255,0),4);double areaScore[3][30];
+
+		std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
+
+		line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[finalK].two);
+		rho = line->rho;
+		theta = line->angle;
+		a = cos(theta);
+		b = sin(theta);
+		x0 = a*rho;
+		y0 = b*rho;
+		pt1.x = cvRound(x0 + 1000*(-b));
+		pt1.y = cvRound(y0 + 1000*(a));
+		pt2.x = cvRound(x0 - 1000*(-b));
+		pt2.y = cvRound(y0 - 1000*(a));
+		finalines[1][0] = pt1.x; finalines[1][1]=pt1.y; finalines[1][2] = pt2.x; finalines[1][3]=pt2.y;
+		//cv::line( dist, pt1, pt2, CV_RGB(0,255,0),4);
+
+		std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
+
+		line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[finalL].one);
+		rho = line->rho;
+		theta = line->angle;
+		a = cos(theta);
+		b = sin(theta);
+		x0 = a*rho;
+		y0 = b*rho;
+		pt1.x = cvRound(x0 + 1000*(-b));
+		pt1.y = cvRound(y0 + 1000*(a));
+		pt2.x = cvRound(x0 - 1000*(-b));
+		pt2.y = cvRound(y0 - 1000*(a));
+		finalines[2][0] = pt1.x; finalines[2][1]=pt1.y; finalines[2][2] = pt2.x; finalines[2][3]=pt2.y;
+		//cv::line( dist, pt1, pt2, CV_RGB(0,255,0),4);
+
+		std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
+
+		line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[finalL].two);
+		rho = line->rho;
+		theta = line->angle;
+		a = cos(theta);
+		b = sin(theta);
+		x0 = a*rho;
+		y0 = b*rho;
+		pt1.x = cvRound(x0 + 1000*(-b));
+		pt1.y = cvRound(y0 + 1000*(a));
+		pt2.x = cvRound(x0 - 1000*(-b));
+		pt2.y = cvRound(y0 - 1000*(a));
+		finalines[3][0] = pt1.x; finalines[3][1]=pt1.y; finalines[3][2] = pt2.x; finalines[3][3]=pt2.y;
+		//cv::line( dist, pt1, pt2, CV_RGB(0,255,0),4);
+
 	for (int i = 0; i < finalines.size(); i++)
 	{
 		for (int j = i+1; j < finalines.size(); j++)
@@ -1225,29 +1118,31 @@ void showResult(Mat& src, Mat& cross, Mat& turned){
 	if (approx.size() != 4)
 	{
 		std::cout << "The object is not quadrilateral!" << std::endl;
-		cv::Mat quad = cv::Mat::zeros(src.rows, src.cols, CV_8UC3);
-		cross = src.clone();
-		turned = quad.clone();
-		return;
+		continue;//return;
 	}
 
+	center.x = 0.0;
+	center.y = 0.0;
 	// Get mass center
 	for (int i = 0; i < corners.size(); i++)
 		center += corners[i];
 	center *= (1. / corners.size());
 
 	sortCorners(corners, center);
-	//cout<<"center "<<center.x<<" "<<center.y<<endl;
+	cout<<"center "<<center.x<<" "<<center.y<<endl;
 	for(int i=0;i<4;i++){
-		//cout<<"corner "<<corners[i].x<<" "<<corners[i].y<<endl;
+		cout<<"corner "<<corners[i].x<<" "<<corners[i].y<<endl;
 	}
 	if (corners.size() == 0){
 		std::cout << "The corners were not sorted correctly!" << std::endl;
-		cv::Mat quad = cv::Mat::zeros(src.rows, src.cols, CV_8UC3);
-		cross = src.clone();
-		turned = quad.clone();
-		return;
+		continue;//return;
 	}
+
+	string myreason;
+
+	bool doubtThis = doubtShape(corners,slt);
+	if(doubtThis)
+		doubtCount++;
 
 	cv::Mat dst = src.clone();
 
@@ -1267,110 +1162,58 @@ void showResult(Mat& src, Mat& cross, Mat& turned){
 	}
 
 	// Draw corner points
-	cv::circle(dst, corners[0], 3, CV_RGB(255,0,0), 6);
-	cv::circle(dst, corners[1], 3, CV_RGB(0,255,0), 6);
-	cv::circle(dst, corners[2], 3, CV_RGB(0,0,255), 6);
-	cv::circle(dst, corners[3], 3, CV_RGB(255,255,255), 6);
+	//cv::circle(dist, corners[0], 3, CV_RGB(255,0,0), 6);
+	//cv::circle(dist, corners[1], 3, CV_RGB(0,255,0), 6);
+	//cv::circle(dist, corners[2], 3, CV_RGB(0,0,255), 6);
+	//cv::circle(dist, corners[3], 3, CV_RGB(255,255,255), 6);
 
-	//turn the angle
-    double u0 = src.cols/2.0;
-    double v0 = src.rows/2.0;
+	//cout<<"score "<<top10[i0].score<<endl;
+	if(doubtThis)
+	{
+		//doubts.push_back(corners);//(dist);
+		//reason.push_back(myreason);
 
-	double mp1[3];
-	pointToVecP(corners[3],mp1);
-	double mp2[3];
-	pointToVecP(corners[2],mp2);
-	double mp3[3];
-	pointToVecP(corners[0],mp3);
-	double mp4[3];
-	pointToVecP(corners[1],mp4);
-
-	double cha14[3],cha24[3],cha34[3];
-	//cout<<"mp1: "<<mp1[0]<<", "<<mp1[1]<<", "<<mp1[2]<<endl;
-	//cout<<"mp2: "<<mp2[0]<<", "<<mp2[1]<<", "<<mp2[2]<<endl;
-	//cout<<"mp3: "<<mp3[0]<<", "<<mp3[1]<<", "<<mp3[2]<<endl;
-	//cout<<"mp4: "<<mp4[0]<<", "<<mp4[1]<<", "<<mp4[2]<<endl;
-	chacheng(mp1,mp4,cha14,3);
-	chacheng(mp2,mp4,cha24,3);
-	chacheng(mp3,mp4,cha34,3);
-	double k2 = diancheng(cha14,mp3,3)/diancheng(cha24,mp3,3);
-	double k3 = diancheng(cha14,mp2,3)/diancheng(cha34,mp2,3);
-
-	//std::cout<<"k2k3 "<<k2<<" "<<k3<<std::endl;
-	double n2[3],n3[3];
-	for(int i=0;i<3;i++){
-		n2[i] = k2*mp2[i]-mp1[i];
-		n3[i] = k3*mp3[i]-mp1[i];
 	}
-	/*
-	//cout<<"n2: ";
-	for(int i=0;i<3;i++)
-		//cout<<n2[i]<<",";
-	//cout<<endl;
-	//cout<<"n3: ";
-	for(int i=0;i<3;i++)
-		//cout<<n3[i]<<",";
-	//cout<<endl;
-	 * */
-	double fk1 = -(1.0/(n2[2]*n3[2]));
-	double fk2 = n2[0]*n3[0]-(n2[0]*n3[2]+n2[2]*n3[0])*u0+n2[2]*n3[2]*u0*u0;
-	double fk3 = n2[1]*n3[1]-(n2[1]*n3[2]+n2[2]*n3[1])*v0+n2[2]*n3[2]*v0*v0;
-	double f2 = fk1*(fk2+fk3);
+	else{
+		crosses.push_back(corners);//(dist);
+		//spaceScore[curphase][scoreCur[curphase]]=((int)top10[i0].score);
+		lineScore[curphase][scoreCur[curphase]++]=((int)top10[i0].score);
+		//cout<<"phase-cur: "<<scoreCur[curphase]<<endl;
+	}
+	///cross = dst.clone();
+	///turned = quad.clone();
+	}
 
-	//std::cout<<"f2 "<<f2<<std::endl;
-
-	double bl1 = (n2[0]-n2[2]*u0)*n2[0]+(n2[1]-n2[2]*v0)*n2[1]+(u0*u0+v0*v0+f2)*n2[2]*n2[2]-(u0*n2[0]+v0*n2[1])*n2[2];
-	double bl2 = (n3[0]-n3[2]*u0)*n3[0]+(n3[1]-n3[2]*v0)*n3[1]+(u0*u0+v0*v0+f2)*n3[2]*n3[2]-(u0*n3[0]+v0*n3[1])*n3[2];
-
-	double factor = 2;
-
-	double bl0 = 2*max(fabs(mp1[0]-mp2[0]),fabs(mp3[0]-mp4[0]))/max(fabs(mp1[1]-mp3[1]),fabs(mp2[1]-mp4[1]));
-	double bl = bl0;
-
-	if(bl1*bl2>0)
-		bl = sqrt(bl1/bl2);
-
-	/**/
-	if(bl0>0&&bl<0||bl0<0&&bl>0)
-		bl = bl0;
-
-	if(bl>3||bl<0.3)
-		bl = bl0;
-
-	//std::cout<<"bl0 "<<bl0<<",bl1 "<<bl1<<",bl2 "<<bl2<<",bl "<<bl<<std::endl;
-
-	int width = src.cols>bl*src.rows?src.cols:bl*src.rows;
-	int height = (int)(width/bl);
-
-	cv::Mat quad = cv::Mat::zeros(height, width, CV_8UC3);
-	std::vector<cv::Point2f> quad_pts;
-	quad_pts.push_back(cv::Point2f(0, 0));
-	quad_pts.push_back(cv::Point2f(quad.cols, 0));
-	quad_pts.push_back(cv::Point2f(quad.cols, quad.rows));
-	quad_pts.push_back(cv::Point2f(0, quad.rows));
-
-	cv::Mat transmtx = cv::getPerspectiveTransform(corners, quad_pts);
-	cv::warpPerspective(src, quad, transmtx, quad.size());
-
-	cross = dst.clone();
-	turned = quad.clone();
-
+//	cout<<"DoubtCount "<<doubtCount<<endl;
+	if(doubtCount>0.4*(int)top10.size()||top10.size()<10)
+		;//doubt = true;
 	//cv::imshow("imageF", dst);
 	//cv::imshow("quadrilateral", quad);
 	//waitKey();
 }
 
-//procMode: 0, default; 1, big; 2, micro; 3, deep1
-int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
+double lighting = 110.0;
+double scale = 1.0;
 
+void myNormalSize(Mat& src, Mat& tsrc, int type){
+
+	double bili = src.cols>src.rows?(src.cols>500?500.0/src.cols:1):(src.rows>500?500.0/src.rows:1);
+	Size sz = Size(src.cols*bili,src.rows*bili);
+	tsrc = Mat(sz,type);
+	cv::resize(src, tsrc, sz);
+	scale = bili;
+}
+
+//procMode: 0, default; 1, big; 2, micro; 3, deep1
+int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& cross){
+
+	scoreCur[0] = 0;scoreCur[1] = 0;
 	//step0: to gray picture
-	cross = Mat::zeros(src0.rows,src0.cols,CV_8UC1);
-	turned = Mat::zeros(src0.rows,src0.cols,CV_8UC1);
+
 
     cv::Mat bw,bw0;
 
-	cv::cvtColor(src, bw, CV_BGR2GRAY);
-	//blur(bw,bw, Size(5,5));
+	cv::cvtColor(tsrc, bw, CV_BGR2GRAY);
 	//step1: edge detection
 	cv::Mat pic1;
 	int ddepth = 3;
@@ -1383,32 +1226,10 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 
 	cv::addWeighted( abs_grad_x, 1, abs_grad_y, 1, 0, grad);
 
-	cv::threshold(grad,pic1,40.0,255,CV_THRESH_TOZERO);
-	//cv::threshold(grad,pic1,180.0,255,CV_THRESH_BINARY);
-	/**************************************************/
-//	for(int i=0;i<2;i++){
-//	bw = pic1.clone();
-//	cv::Sobel(bw,grad_x,ddepth,1,0);
-//	cv::convertScaleAbs(grad_x,abs_grad_x);
-//
-//	cv::Sobel(bw,grad_y,ddepth,0,1);
-//	cv::convertScaleAbs(grad_y,abs_grad_y);
-//
-//	cv::addWeighted( abs_grad_x, 1, abs_grad_y, 1, 0, grad);
-//
-//	cv::threshold(grad,pic1,40.0,255,CV_THRESH_TOZERO);
-//	}
-	/**************************************************/
+	cv::threshold(grad,pic1,lighting,255,CV_THRESH_TOZERO);
 
-	//cv::threshold(grad,pic1,40.0,255,CV_THRESH_BINARY);
 	std::cout<<"img size: "<<pic1.cols<<" "<<pic1.rows<<std::endl;
-/*
-	Size sz = Size(pic1.cols*3/5,grad.rows*3/5);
-	Mat pic3 = Mat(sz,CV_32S);
-	cv::resize(pic1, pic3, sz);
-    cv::imshow("grad", pic3);
-	cv::waitKey();
-*/
+
 	//step2: Hough transform
 	IplImage iplimg = pic1;
 	CvMemStorage* storage = cvCreateMemStorage(0);
@@ -1439,24 +1260,7 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 			pt2.x = line->x2;//cvRound(x0 - 1000*(-b));
 			pt2.y = line->y2;//cvRound(y0 - 1000*(a));
 			cv::Mat pic11 = pic1.clone();
-
-			/*
-			if(!isLine(pic11,pt1, pt2, THRESHOLD[0], SIZE[0], 1, procMode))
-			{
-				fakeLines[i]=0;
-				fakes++;
-			}
-			else
-				fakeLines[i]=1;
-			*/
-			///
 			fakeLines[i] = 1;
-			//std::cout<<"test line "<<fakeLines[i]<<std::endl;
-			if(fakeLines[i]==1&&(procMode==3&&(notRectLineLv2(line->angle,line->rho)||!isBlackBorder(pic11,pt1, pt2, 17*3-2, 11*3-2, 1,i)))){
-				fakeLines[i]=0;
-				fakes++;
-			}
-
 /*  //if(fabs(line->angle-CV_PI/2)<CV_PI/6){
 			cv::line( pic11, pt1, pt2, CV_RGB(255,255,255),6);
 
@@ -1510,22 +1314,7 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 				drho=fabs(l1->rho-l2->rho);
 			double rho1 = l1->rho, rho2 = l2->rho;
 			double theta1 = l1->angle, theta2 = l2->angle;
-/*
-			if(i==5&&j==8){
-				cout<<"l1 "<<l1->angle<<" "<<l1->rho<<endl;
-				cout<<"l2 "<<l2->angle<<" "<<l2->rho<<endl;
-				std::cout<<"why not oppsite "<<lineSorted[i]<<" "<<lineSorted[j]<<" "<<dangle<<" "<<drho<<" "<<width<<" "<<height<<" "
-						<<(rho1/(cos(theta1)+height*sin(theta1)/width)-0.5*width)*(rho2/(cos(theta2)+height*sin(theta2)/width)-0.5*width)<<std::endl;
-			}
-*/
 
-			/*if((dangle>=CV_PI*5.0/6.0&&dangle<=CV_PI*7.0/6.0||
-					dangle<=CV_PI*1.0/6.0&&(rho1/(cos(theta1)+height*sin(theta1)/width)-0.5*width)*(rho2/(cos(theta2)+height*sin(theta2)/width)-0.5*width)<0)
-					&&drho>0.2*width&&drho>0.2*height)*/
-
-			/*if((dangle>=CV_PI*7.0/9.0&&dangle<=CV_PI*11.0/9.0||
-								dangle<=CV_PI*2.0/9.0&&(rho1/(cos(theta1)+height*sin(theta1)/width)-0.5*width)*(rho2/(cos(theta2)+height*sin(theta2)/width)-0.5*width)<0)
-								&&drho>0.2*width&&drho>0.2*height)*/
 			OPPOANG = 0.25;
 			if((dangle>=CV_PI*(1.0-OPPOANG)&&dangle<=CV_PI*(OPPOANG+1.0)&&(drho=l1->rho+l2->rho)||
 				(dangle<=CV_PI*OPPOANG||(dangle>=(2.0-OPPOANG)*CV_PI&&dangle<=2.0*CV_PI))&&(rho1/(cos(theta1)+height*sin(theta1)/width)-0.5*width)*(rho2/(cos(theta2)+height*sin(theta2)/width)-0.5*width)<0)
@@ -1552,20 +1341,6 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 
 	std::cout<<"opposite pair "<<opplineVector.size()<<std::endl;
 	int vecsize = opplineVector.size()>500?500:opplineVector.size();
-	/*
-	for(int s=0;s<lines2.size();s++){
-		CvLinePolar2* line = (CvLinePolar2*)cvGetSeqElem(lines,lines2[s]);
-		float rho = line->rho, theta = line->angle;
-		cv::Point pt1, pt2;
-		double a = cos(theta), b = sin(theta);
-		double x0 = a*rho, y0 = b*rho;
-		pt1.x = cvRound(x0 + 1000*(-b));
-		pt1.y = cvRound(y0 + 1000*(a));
-		pt2.x = cvRound(x0 - 1000*(-b));
-		pt2.y = cvRound(y0 - 1000*(a));
-		cv::line( pic1, pt1, pt2, CV_RGB(255,255,255));
-	}
-*/
 	/*
 	for(int s=0;s<opplineVector.size();s++){
 		cv::Mat pic2 = pic1.clone();
@@ -1626,6 +1401,8 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 	int vecsize2 = vecsize;
 	int lStart = 0;
 
+	priority_queue<quadrNode> qn;
+
 	for(int k=0;k<vecsize1&&k<opplineVector.size();k++){
 		OppositeLines pair1 = opplineVector.at(k);
 		CvLinePolar2 *clines[4];
@@ -1670,23 +1447,7 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 				xylines[m][2] = cvRound(x0 - 1000*(-b));
 				xylines[m][3] = cvRound(y0 - 1000*(a));
 			}
-/*
-			if(k==0&&l==9){
-				cv::Mat pic2 = pic1.clone();
-				for(int n=0;n<4;n++){
-					cv::Point pt1, pt2;
-					pt1.x = xylines[n][0];
-					pt1.y = xylines[n][1];
-					pt2.x = xylines[n][2];
-					pt2.y = xylines[n][3];
-					cv::line( pic2, pt1, pt2, CV_RGB(255,255,255));
-					cv::imshow("image", pic2);
-					std::cout<<clines[n]->angle<<" "<<clines[n]->rho<<std::endl;
-					cv::waitKey();
-				}
 
-			}
-*/
 //			if(k==0&&l==12)
 //				cout<<"here1"<<endl;
 
@@ -1696,30 +1457,7 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 			for(int n=0;n<4;n++){
 
 				pt[n] = computeIntersect(xylines[n/2], xylines[2+n%2]);
-				/*
-				if(k==1&&l==5){
-					cv::Mat pic2 = pic1.clone();
-					cv::Point pt1, pt2;
-					pt1.x = xylines[n/2][0];
-					pt1.y = xylines[n/2][1];
-					std::cout<<"("<<pt1.x<<","<<pt1.y<<")"<<std::endl;
-					pt2.x = xylines[n/2][2];
-					pt2.y = xylines[n/2][3];
-					std::cout<<"("<<pt2.x<<","<<pt2.y<<")"<<std::endl;
-					cv::line( pic2, pt1, pt2, CV_RGB(255,255,255));
-					pt1.x = xylines[2+n%2][0];
-					pt1.y = xylines[2+n%2][1];
-					std::cout<<"("<<pt1.x<<","<<pt1.y<<")"<<std::endl;
-					pt2.x = xylines[2+n%2][2];
-					pt2.y = xylines[2+n%2][3];
-					std::cout<<"("<<pt2.x<<","<<pt2.y<<")"<<std::endl;
-					cv::line( pic2, pt1, pt2, CV_RGB(255,255,255));
-					std::cout<<"("<<pt[n].x<<","<<pt[n].y<<")"<<std::endl;
-					cv::circle(pic2, pt[n], 3, CV_RGB(255,255,255), 2);
-					cv::imshow("image", pic2);
-					cv::waitKey();
-				}
-*/
+
 				double dnangle = fabs(clines[n/2]->angle-clines[2+n%2]->angle);
 //				if(k==0&&l==12)
 //					std::cout<<"DANAGEL "<<n<<" "<<dnangle<<std::endl;
@@ -1821,10 +1559,16 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
                 if(k==412&&l==657)
                 	debug = true;
 
-                if(isRealQuadr(pic1,xylines,THRESHOLD[1],SIZE[1],procMode,score,debug)&&isLikeRect(clines,debug)&&
-                  (procMode<3&&((angleSum<CV_PI/6||2*CV_PI-angleSum<CV_PI/6)&&maxScore<=score/*(distToM<minDistToM||distToM<20)&&(circ>1.0*mcirc||(circ>0.95*mcirc&&circ<mcirc))*/)||
-				   procMode==3&&angleSum<CV_PI/3&&maxScore<=score))
-				{
+                Vec4i segs[4];
+				segs[0]=lines1[pair1.one];
+				segs[1]=lines1[pair1.two];
+				segs[2]=lines1[pair2.one];
+				segs[3]=lines1[pair2.two];
+
+				if(isLikeRect(clines,debug)&&isRealQuadr(pic1,xylines,segs,THRESHOLD[1],SIZE[1],procMode,score,debug,k,l,qn)&&
+                                  (procMode<3&&((angleSum<CV_PI/6||CV_PI-angleSum<CV_PI/6||2*CV_PI-angleSum<CV_PI/6)&&maxScore<=score/*(distToM<minDistToM||distToM<20)&&(circ>1.0*mcirc||(circ>0.95*mcirc&&circ<mcirc))*/)||
+                				   procMode==3&&angleSum<CV_PI/3&&maxScore<=score))
+                {
 					finalK = k;
 					finalL = l;
 					mcirc = circ;
@@ -1839,107 +1583,6 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 					cout<<"angles "<<clines[0]->angle<<" "<<clines[1]->angle<<" "<<clines[2]->angle<<" "<<clines[3]->angle<<endl;
 					cout<<"thetas "<<theta0<<" "<<theta1<<" "<<theta2<<" "<<theta3<<endl;
 					std::cout<<maxScore<<" "<<score<<" "<<angleSum<<" "<<distToM<<" "<<circ<<" "<<k<<" "<<l<<" "<<finalK<<" "<<finalL<<std::endl;
-              //Quadrangle quad;
-				//quad.a = pt[0];
-				//quad.b = pt[1];
-				//quad.c = pt[2];
-				//quad.d = pt[3];
-				//quadVector.push_back(quad);
-
-				//to show quadrangles
-				cv::Mat pic2 = pic1.clone();
-				cv::Point pt01, pt02, pt03, pt04;
-				pt01.x = 0; pt01.y=height/2;
-				pt02.x = width; pt02.y=height/2;
-				pt03.x = width/2; pt03.y=0;
-				pt04.x = width/2; pt04.y=height;
-				//cv::line( pic2, pt01, pt02, CV_RGB(255,255,255));
-				//cv::line( pic2, pt03, pt04, CV_RGB(255,255,255));
-
-				CvLinePolar2* line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[k].one);
-				float rho = line->rho, theta = line->angle;
-				cv::Point pt1, pt2;
-				double a = cos(theta), b = sin(theta);
-				double x0 = a*rho, y0 = b*rho;
-				pt1.x = cvRound(x0 + 1000*(-b));
-				pt1.y = cvRound(y0 + 1000*(a));
-				pt2.x = cvRound(x0 - 1000*(-b));
-				pt2.y = cvRound(y0 - 1000*(a));
-//				if(pt2.x!=pt1.x)
-//					drawInnerBorder(pic2,(0.0+pt2.y-pt1.y)/(0.0+pt2.x-pt1.x),pt1.x,pt1.y);
-//				else{
-//					pt1.y = 0;
-//					pt2.y = pic2.rows;
-//					cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
-//				}
-				cv::line( pic2, pt1, pt2, CV_RGB(255,255,255));
-
-				line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[k].two);
-				rho = line->rho;
-				theta = line->angle;
-				a = cos(theta);
-				b = sin(theta);
-				x0 = a*rho;
-				y0 = b*rho;
-				pt1.x = cvRound(x0 + 1000*(-b));
-				pt1.y = cvRound(y0 + 1000*(a));
-				pt2.x = cvRound(x0 - 1000*(-b));
-				pt2.y = cvRound(y0 - 1000*(a));
-//				if(pt2.x!=pt1.x)
-//					drawInnerBorder(pic2,(0.0+pt2.y-pt1.y)/(0.0+pt2.x-pt1.x),pt1.x,pt1.y);
-//				else{
-//					pt1.y = 0;
-//					pt2.y = pic2.rows;
-//					cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
-//				}
-				cv::line( pic2, pt1, pt2, CV_RGB(255,255,255));
-
-				line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[l].one);
-				rho = line->rho;
-				theta = line->angle;
-				a = cos(theta);
-				b = sin(theta);
-				x0 = a*rho;
-				y0 = b*rho;
-				pt1.x = cvRound(x0 + 1000*(-b));
-				pt1.y = cvRound(y0 + 1000*(a));
-				pt2.x = cvRound(x0 - 1000*(-b));
-				pt2.y = cvRound(y0 - 1000*(a));
-//				if(pt2.x!=pt1.x)
-//					drawInnerBorder(pic2,(0.0+pt2.y-pt1.y)/(0.0+pt2.x-pt1.x),pt1.x,pt1.y);
-//				else{
-//					pt1.y = 0;
-//					pt2.y = pic2.rows;
-//					cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
-//				}
-				cv::line( pic2, pt1, pt2, CV_RGB(255,255,255));
-
-				line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[l].two);
-				rho = line->rho;
-				theta = line->angle;
-				a = cos(theta);
-				b = sin(theta);
-				x0 = a*rho;
-				y0 = b*rho;
-				pt1.x = cvRound(x0 + 1000*(-b));
-				pt1.y = cvRound(y0 + 1000*(a));
-				pt2.x = cvRound(x0 - 1000*(-b));
-				pt2.y = cvRound(y0 - 1000*(a));
-//				if(pt2.x!=pt1.x)
-//					drawInnerBorder(pic2,(0.0+pt2.y-pt1.y)/(0.0+pt2.x-pt1.x),pt1.x,pt1.y);
-//				else{
-//					pt1.y = 0;
-//					pt2.y = pic2.rows;
-//					cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
-//				}
-				cv::line( pic2, pt1, pt2, CV_RGB(255,255,255));
-//				Size sz = Size(pic2.cols/3,pic2.rows/3);
-//				Mat pic3 = Mat(sz,CV_32S);
-//				resize(pic2, pic3, sz);
-//				cv::imshow("imageComp", pic3);
-				cv::imshow("imageComp", pic2);
-				cv::waitKey();
-
 				}*/
 			}
 		}
@@ -1948,107 +1591,10 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 
 	if(finalK>=0&&finalL>=0)
 	{
-		std::cout<<"final "<<finalK<<" "<<finalL<<std::endl;
+//		std::cout<<"final "<<finalK<<" "<<finalL<<std::endl;
 
-		cv::Mat pic2 = pic1.clone();
-		CvLinePolar2* line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[finalK].one);
-		float rho = line->rho, theta = line->angle;
-		cv::Point pt1, pt2;
-		double a = cos(theta), b = sin(theta);
-		double x0 = a*rho, y0 = b*rho;
-		pt1.x = cvRound(x0 + 1000*(-b));
-		pt1.y = cvRound(y0 + 1000*(a));
-		pt2.x = cvRound(x0 - 1000*(-b));
-		pt2.y = cvRound(y0 - 1000*(a));
-		finalines[0][0] = pt1.x; finalines[0][1]=pt1.y; finalines[0][2] = pt2.x; finalines[0][3]=pt2.y;
-		cv::line( pic2, pt1, pt2, CV_RGB(255,255,255));
-		//if(pt2.x!=pt1.x)
-		//	drawInnerBorder(pic2,(0.0+pt2.y-pt1.y)/(0.0+pt2.x-pt1.x),pt1.x,pt1.y);
-		//else{
-		//	pt1.y = 0;
-		//	pt2.y = pic2.rows;
-		//	cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
-		//}
-		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
-		//imshow("imageF", pic2);
-		//waitKey();
+		showResult(tsrc,tslt,cross,qn,opplineVector);
 
-		line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[finalK].two);
-		rho = line->rho;
-		theta = line->angle;
-		a = cos(theta);
-		b = sin(theta);
-		x0 = a*rho;
-		y0 = b*rho;
-		pt1.x = cvRound(x0 + 1000*(-b));
-		pt1.y = cvRound(y0 + 1000*(a));
-		pt2.x = cvRound(x0 - 1000*(-b));
-		pt2.y = cvRound(y0 - 1000*(a));
-		finalines[1][0] = pt1.x; finalines[1][1]=pt1.y; finalines[1][2] = pt2.x; finalines[1][3]=pt2.y;
-		cv::line( pic2, pt1, pt2, CV_RGB(255,255,255));
-		//if(pt2.x!=pt1.x)
-		//	drawInnerBorder(pic2,(0.0+pt2.y-pt1.y)/(0.0+pt2.x-pt1.x),pt1.x,pt1.y);
-		//else{
-		//	pt1.y = 0;
-		//	pt2.y = pic2.rows;
-		//	cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
-		//}
-		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
-		//imshow("imageF", pic2);
-		//waitKey();
-
-		line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[finalL].one);
-		rho = line->rho;
-		theta = line->angle;
-		a = cos(theta);
-		b = sin(theta);
-		x0 = a*rho;
-		y0 = b*rho;
-		pt1.x = cvRound(x0 + 1000*(-b));
-		pt1.y = cvRound(y0 + 1000*(a));
-		pt2.x = cvRound(x0 - 1000*(-b));
-		pt2.y = cvRound(y0 - 1000*(a));
-		finalines[2][0] = pt1.x; finalines[2][1]=pt1.y; finalines[2][2] = pt2.x; finalines[2][3]=pt2.y;
-		cv::line( pic2, pt1, pt2, CV_RGB(255,255,255));
-		//if(pt2.x!=pt1.x)
-		//	drawInnerBorder(pic2,(0.0+pt2.y-pt1.y)/(0.0+pt2.x-pt1.x),pt1.x,pt1.y);
-		//else{
-		//	pt1.y = 0;
-		//	pt2.y = pic2.rows;
-		//	cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
-		//}
-		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
-		//imshow("imageF", pic2);
-		//waitKey();
-
-		line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[finalL].two);
-		rho = line->rho;
-		theta = line->angle;
-		a = cos(theta);
-		b = sin(theta);
-		x0 = a*rho;
-		y0 = b*rho;
-		pt1.x = cvRound(x0 + 1000*(-b));
-		pt1.y = cvRound(y0 + 1000*(a));
-		pt2.x = cvRound(x0 - 1000*(-b));
-		pt2.y = cvRound(y0 - 1000*(a));
-		finalines[3][0] = pt1.x; finalines[3][1]=pt1.y; finalines[3][2] = pt2.x; finalines[3][3]=pt2.y;
-		cv::line( pic2, pt1, pt2, CV_RGB(255,255,255));
-		//if(pt2.x!=pt1.x)
-		//	drawInnerBorder(pic2,(0.0+pt2.y-pt1.y)/(0.0+pt2.x-pt1.x),pt1.x,pt1.y);
-		//else{
-		//	pt1.y = 0;
-		//	pt2.y = pic2.rows;
-		//	cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
-		//}
-		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
-		showResult(src0,cross,turned);
-
-		//Size sz = Size(pic2.cols/3,pic2.rows/3);
-		//Mat pic3 = Mat(sz,CV_32S);
-		//resize(pic2, pic3, sz);
-//		cv::imshow("imageF", pic2);
-//		cv::waitKey();
 		return 0;
 	}
 
@@ -2056,180 +1602,91 @@ int process(cv::Mat src0,cv::Mat src, int procMode, Mat& cross, Mat& turned){
 }
 
 //procMode: 0, default; 1, big; 2, micro; 3, deep1
-int mainProc(cv::Mat src, int procMode, Mat& cross, Mat& turned){
+int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross,  Mat& turned){
+	vector<vector<cv::Point2f> > cross_l;
+	vector<vector<cv::Point2f> > cross_s;
 
 	for(int run=0;run<1;run++){
+		vector<vector<cv::Point2f> > crosses;
+		Mat tsrc, tslt;
+		myNormalSize(src,tsrc,CV_32S);
+		myNormalSize(slt,tslt,CV_32F);//really?
+		crosses.clear();
+		cross_l.clear();
+		cross_s.clear();
+		tLineScore.clear();
+		tAreaScore.clear();
+		tAnglScore.clear();
+		tSpaceScore.clear();
+		doubt = true;
 
+		lighting = 180.0;
+		curphase = 0;
 		modifyAttr(procMode,run);
-		int result = process(src, src, procMode,cross,turned);
+		int result = process(tsrc, tslt, procMode,cross_l);
 
-		if(result!=-1)
-			return result;
+		if(doubt){
+			lighting = 40.0;
+			curphase = 1;
+			result = process(tsrc, tslt, procMode,cross_s);
+		}
+		for(int j=0;j<20&&j<cross_l.size();j++){
+			crosses.push_back(cross_l[j]);
+
+			tLineScore.push_back(lineScore[0][j]);
+			tAreaScore.push_back(areaScore[0][j]);
+			tAnglScore.push_back(anglScore[0][j]);
+			tSpaceScore.push_back(spaceScore[0][j]);
+		}
+
+		for(int j=0;j<20&&j<cross_s.size();j++){
+			crosses.push_back(cross_s[j]);
+
+			tLineScore.push_back(lineScore[1][j]);
+			tAreaScore.push_back(areaScore[1][j]);
+			tAnglScore.push_back(anglScore[1][j]);
+			tSpaceScore.push_back(spaceScore[1][j]);
+		}
+
+		if(crosses.size()==0){
+			cross = Mat::zeros(src.rows,src.cols,CV_32SC3);
+			turned = Mat::zeros(src.rows,src.cols,CV_32SC3);
+			return -1;
+		}
+		for(int i=0;i<40;i++){
+			topRank[i] = i;
+		}
+
+		qsort(topRank, min(40,(int)crosses.size()), sizeof(int), compareTopScore);
+		vector<cv::Point2f> corners;
+
+		if(tAreaScore[topRank[0]]>0){
+			corners = crosses[topRank[0]];
+
+		}
+		else{
+			for(int i=0;i<20;i++)
+			{
+				finalRank[i] = i;
+				spaceRank[i] = i;
+				angleRank[i] = i;
+			}
+
+			qsort(spaceRank, min(20,(int)crosses.size()), sizeof(int), compareSpaceScore);
+			qsort(angleRank, min(20,(int)crosses.size()), sizeof(int), compareAngleScore);
+
+			for(int i=0;i<20&&i<crosses.size();i++){
+				spaceRankDic[spaceRank[i]] = i;
+				angleRankDic[angleRank[i]] = i;
+			}
+
+			qsort(finalRank, min(20,(int)crosses.size()), sizeof(int), compareFinalScore);
+			corners = crosses[topRank[finalRank[0]]];
+		}
+
+		drawResult(tsrc, cross, corners);
+		turnImage(src, turned, corners, scale);
 	}
-	return -1;
-}
-
-int mainProc2(Mat input, cv::Mat src, int procMode, Mat& cross, Mat& turned){
-
-	for(int run=0;run<1;run++){
-
-		modifyAttr(procMode,run);
-		int result = process(input, src, procMode,cross,turned);
-
-		if(result!=-1)
-			return result;
-	}
-	return -1;
-}
-
-void getCountHistoGram(Mat& src){
-	//step0: to gray picture
-	cv::Mat bw,bw0;
-
-	cv::cvtColor(src, bw, CV_BGR2GRAY);
-
-	//step1: edge detection
-	cv::Mat pic1;
-	int ddepth = 3;
-
-	cv::Sobel(bw,grad_x,ddepth,1,0);
-	cv::convertScaleAbs(grad_x,abs_grad_x);
-
-	cv::Sobel(bw,grad_y,ddepth,0,1);
-	cv::convertScaleAbs(grad_y,abs_grad_y);
-
-	cv::addWeighted( abs_grad_x, 1, abs_grad_y, 1, 0, grad);
-
-	int histSize = 30;
-	float range[] = { 0, 256 } ;
-	const float* histRange = { range };
-
-	bool uniform = true; bool accumulate = false;
-
-    int hist_w = grad.cols; int hist_h = grad.rows;
-    int bin_w = cvRound( (double) hist_w/histSize );
-
-    Mat hist = Mat::zeros(1,histSize,CV_16UC1);
-
-    int dim[] = {0};
-    vector<Mat> mats;
-    mats.push_back(grad);
-
-    for(int i=0;i<histSize;i++){
-    	int start_x = i*bin_w;
-    	unsigned short count0 = 0;
-    	for(int j=start_x;j<start_x+bin_w;j++){
-    		for(int k=0;k<grad.rows;k++){
-    			CvPoint2D32f ptr = cvPoint2D32f(j, k);
-    			int val = grad.at<uchar>(ptr);
-    			if(val>40)
-    				count0++;
-    		}
-    	}
-
-
-    	hist.at<unsigned short>(i)=count0;
-    	//cout<<i<<", "<<count0<<" "<<hist.at<unsigned short>(i)<<endl;
-    }
-    /*
-    for( int i = 1; i < histSize; i++ )
-    {
-    	cout<<i<<" "<<hist.at<unsigned short>(i-1)<<endl;
-    }
-    */
-	//calcHist(&mats[0],1,&dim[0],Mat(),hist,1,&histSize, &histRange, uniform, accumulate);
-
-	Mat histImage( hist_h, hist_w, CV_8UC1, Scalar( 0,0,0) );
-	normalize(hist, hist, 0, histImage.rows, NORM_MINMAX, -1, Mat() );
-
-	cout<<"out size: "<<hist_h<<" "<<hist_w<<endl;
-
-    for( int i = 1; i < histSize; i++ )
-    {
-    	cout<<"Point: "<<i<<" "<<bin_w*(i-1)<<" "<<hist.at<unsigned short>(i-1)<<endl;
-
-        line( histImage, Point( bin_w*(i-1), hist_h - cvRound(hist.at<unsigned short>(i-1)) ) ,
-	    	    	     Point( bin_w*(i), hist_h - cvRound(hist.at<unsigned short>(i)) ),
-					     Scalar( 255, 255, 255), 2, 8, 0  );
-
-    }
-
-    imshow("grad",grad);
-    namedWindow("calcHist Demo");
-    imshow("calcHist Demo", histImage );
-
-    waitKey(0);
-}
-
-int getGradient(Mat& src,Mat& grad2){
-	cv::Mat bw,bw0;
-	Mat grad1;
-
-	cv::cvtColor(src, bw, CV_BGR2GRAY);
-
-	cv::Mat pic1;
-	int ddepth = 3;
-
-	cv::Sobel(bw,grad_x,ddepth,1,0);
-	cv::convertScaleAbs(grad_x,abs_grad_x);
-
-	cv::Sobel(bw,grad_y,ddepth,0,1);
-	cv::convertScaleAbs(grad_y,abs_grad_y);
-
-	cv::addWeighted( abs_grad_x, 1, abs_grad_y, 1, 0, grad1);
-
-	cv::threshold(grad1,grad2,40.0,255,CV_THRESH_TOZERO);
 	return 0;
 }
 
-int getCropped(Mat& src, vector<Mat>& grads){
-
-	int size = 16;
-	if(src.rows<size||src.cols<size) return -1;
-
-	Mat src1;
-	cvtColor(src, src1, CV_BGR2GRAY);
-	for(int i=0;i<src1.cols/size;i++){
-		int left = i*size;
-		for(int j=0;j<src1.rows/size;j++){
-			int top = j*size;
-
-			Rect roi(left, top, size, size);
-			Mat image_roi = src1(roi);
-			Mat cropimage;
-			image_roi.copyTo(cropimage);
-			if(countNonZero(cropimage)>30)
-				grads.push_back(cropimage);
-		}
-		if(src1.rows%size!=0){
-			Rect roi(left, src1.rows-size, size, size);
-			Mat image_roi = src1(roi);
-			Mat cropimage;
-			image_roi.copyTo(cropimage);
-			if(countNonZero(cropimage)>30)
-				grads.push_back(cropimage);
-		}
-	}
-	if(src1.cols%size!=0){
-		int left = src1.cols-size;
-		for(int j=0;j<src1.rows/size;j++){
-			int top = j*size;
-
-			Rect roi(left, top, size, size);
-			Mat image_roi = src1(roi);
-			Mat cropimage;
-			image_roi.copyTo(cropimage);
-			if(countNonZero(cropimage)>30)
-				grads.push_back(cropimage);
-		}
-		if(src1.rows%size!=0){
-			Rect roi(left, src1.rows-size, size, size);
-			Mat image_roi = src1(roi);
-			Mat cropimage;
-			image_roi.copyTo(cropimage);
-			if(countNonZero(cropimage)>30)
-				grads.push_back(cropimage);
-		}
-	}
-}
-#endif

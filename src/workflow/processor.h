@@ -17,6 +17,7 @@
 #include "../preprocessing/binarize/binarize.h"
 #include "../preprocessing/deskew/deskew.h"
 #include "../preprocessing/GaussianSPDenoise/denoise.h"
+#include "../preprocessing/utils/OCRUtil.h"
 
 using namespace std;
 using namespace cv;
@@ -145,9 +146,9 @@ public:
 		imwrite(salientOutPath, outputFileSRC);
 		int res;
 		if (src.isResultUseful(outputSRC)) {
-			res = mainProc2(img, outputSRC, 0, crossBD, outputBD);
+			res = mainProc(img, outputSRC, 0, crossBD, outputBD);
 		} else {
-			res = mainProc(img, 0, crossBD, outputBD);
+			res = mainProc(img, outputSRC, 0, crossBD, outputBD);
 		}
 		if (res == -1)
 			return img;
