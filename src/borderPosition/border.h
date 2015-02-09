@@ -508,8 +508,8 @@ bool nosimilar(CvLinePolar2 line, CvSeq* seq){
 int calcAreaScore(float p, float r){
 	if(p==0||r==0) return 0;
 	double fv = 2*p*r/(p+r);
-	int fvi = (int)fv;
-	return fvi/10;
+	int fvi = (int)(fv*100);
+	return fvi;
 }
 
 int myAngleScore(double a1, double a2, double a3, double a4){
@@ -599,7 +599,7 @@ bool doubtShape(vector<cv::Point2f> corners, Mat slt){
 	//
 	//	if(pr.first>0&&pr.first<0.9) return true;
 	if(pr.first>0.9&&pr.second>0&&pr.second<0.7) { return true;}
-	if(pr.first>0.85&&pr.second>0.85) doubt = false;
+	if(pr.first>0.85&&pr.second>0.85) doubt = true;
 	//reason = "";
 	anglScore[curphase][scoreCur[curphase]] = myAngleScore(ang0,ang1,ang2,ang3);
 
@@ -647,7 +647,6 @@ convertToPolar(std::vector<cv::Vec4i> lines0, CvMemStorage* storage, cv::Mat pic
 				line.angle = 2*CV_PI+line.angle;
 
 		}
-
 
 		MAXLINK = 10;//20;
 		double linkScore = 0.0;
@@ -1770,11 +1769,21 @@ int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross,  Mat& turned){
 		}
 
 		qsort(topRank, min(90,(int)crosses.size()), sizeof(int), compareTopScore);
+//		for(int i=0;i<90&&i<crosses.size();i++){
+//			string js;
+//			strstream ss2;
+//			ss2<<i<<"_"<<tAreaScore[topRank[i]];
+//			ss2>>js;
+//			Mat dist;
+//			//dumpShape(crosses[topRank[i2]]);
+//			drawResult(tsrc, dist, crosses[topRank[i]]);
+//			imwrite("/home/litton/test_result_score4/dump_"+js+".jpg",dist);
+//		}
+
 		vector<cv::Point2f> corners;
 
 		if(tAreaScore[topRank[0]]>0){
 			corners = crosses[topRank[0]];
-
 		}
 		else{
 			for(int i=0;i<30;i++)

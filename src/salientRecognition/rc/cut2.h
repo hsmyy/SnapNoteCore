@@ -115,7 +115,7 @@ void RegionCut::floodCenterRegion(Mat &img1f){
 	for(int i = 0; i < 10; ++i){
 		int randRow = (rand() % diameter) - radius;
 		int randCol = (rand() % diameter) - radius;
-		if(abs(img1f.at<float>(centerY + randCol, centerX + randRow) - CANDIDATE_SIGN) < 1e-6){
+		if(abs(img1f.at<float>(centerY + randRow, centerX + randCol) - CANDIDATE_SIGN) < 1e-6){
 			queue.push(Point(centerX + randRow, centerY + randCol));
 		}
 	}
@@ -208,16 +208,17 @@ void RegionCut::modifyRegion(Mat &img1f, Mat &flag, vector<ConnectRegion> &regio
 	// if the region is larger than 15%, remove other region, other remove all
 	if(max > 0.10){
 		for(int y = 0; y < flag.rows; ++y){
-			for(int x = 0; x < flag.cols; ++x){
+			float *row = img1f.ptr<float>(y);
+			for(int x = 0; x < flag.cols; ++x, ++row){
 				if(flag.at<int>(y,x) != maxId){
-					img1f.at<float>(y,x) = 0;
+					*row = 0;
 				}
 			}
 		}
 		//draw centroid on this region
 		// TODO filling some gap
 		findMainBorder(img1f);
-		morphologyEx(img1f, img1f, cv::MORPH_CLOSE, closeOpKernel);
+//		morphologyEx(img1f, img1f, cv::MORPH_CLOSE, closeOpKernel);
 	}else{
 		img1f = 0;
 	}
