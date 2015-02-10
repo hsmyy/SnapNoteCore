@@ -22,8 +22,9 @@ const int THRESHOLD_HEIGHT = 800;
 class Pyramid{
 public:
 	Pyramid(Mat origin);
-	Mat scale();
+	Mat scale(bool resharp = false);
 	Mat reScale(Mat mat);
+	Rect reScale(Rect &rect);
 	Mat getOrigin();
 private:
 	Mat _origin;
@@ -36,12 +37,17 @@ Pyramid::Pyramid(Mat origin):
 
 }
 
-Mat Pyramid::scale(){
+Mat Pyramid::scale(bool resharp){
 	_scale = 0;
 	Mat mid = _origin;
+	Mat smooth;
 	while(mid.rows > THRESHOLD_HEIGHT || mid.cols > THRESHOLD_WIDTH){
 		++_scale;
 		pyrDown(mid, _final, Size(mid.cols / 2, mid.rows / 2));
+		if(resharp){
+			GaussianBlur(_final, smooth, cv::Size(0, 0), 3);
+			addWeighted(_final, 1.5, smooth, -0.5, 0, _final);
+		}
 		mid = _final;
 	}
 	return _final;
@@ -58,6 +64,14 @@ Mat Pyramid::reScale(Mat mat){
 		mid = res;
 	}
 	return res;
+}
+
+Rect Pyramid::reScale(Rect &rect){
+	rect.x <<= _scale;
+	rect.y <<= _scale;
+	rect.width <<= _scale;
+	rect.height <<= _scale;
+	return rect;
 }
 
 #endif /* SALIENTRECOGNITION_PYRAMID_PYRAMID_H_ */

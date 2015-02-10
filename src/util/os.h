@@ -5,8 +5,8 @@
  *      Author: fc
  */
 
-#ifndef UTIL_UTIL_H_
-#define UTIL_UTIL_H_
+#ifndef UTIL_OS_H_
+#define UTIL_OS_H_
 
 #include <dirent.h>
 #include <iostream>
@@ -35,4 +35,4 @@ void saveToFile(string filePath, string text){
 }
 
 
-#endif /* UTIL_UTIL_H_ */
+#endif /* UTIL_OS_H_ */
