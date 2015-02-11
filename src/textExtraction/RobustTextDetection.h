@@ -188,14 +188,14 @@ pair<Mat, Rect> RobustTextDetection::apply(Mat& image) {
 		filtered_stroke_width |= mask;
 	}
 
-	Mat debug2nd = Mat(filtered_stroke_width.size(), CV_8UC1, Scalar(0));
-	for (int y = 0; y < filtered_stroke_width.rows; ++y) {
-		for (int x = 0; x < filtered_stroke_width.cols; ++x) {
-			if (filtered_stroke_width.at<uchar>(y, x) > 0) {
-				debug2nd.at<uchar>(y, x) = 255;
-			}
-		}
-	}
+//	Mat debug2nd = Mat(filtered_stroke_width.size(), CV_8UC1, Scalar(0));
+//	for (int y = 0; y < filtered_stroke_width.rows; ++y) {
+//		for (int x = 0; x < filtered_stroke_width.cols; ++x) {
+//			if (filtered_stroke_width.at<uchar>(y, x) > 0) {
+//				debug2nd.at<uchar>(y, x) = 255;
+//			}
+//		}
+//	}
 //	namedWindow("second");
 //	imshow("second", debug2nd);
 
@@ -246,7 +246,7 @@ Mat RobustTextDetection::firstPassFilter(Mat &img){
 
 		result |= (labelImg == prop.labelID);
 	}
-	conn_comp.debugCC(labelImg, result, props.size(), "first");
+//	conn_comp.debugCC(labelImg, result, props.size(), "first");
 	return result;
 }
 

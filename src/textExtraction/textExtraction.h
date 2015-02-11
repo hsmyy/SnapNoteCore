@@ -59,7 +59,7 @@ vector<Rect> TextExtraction::textExtract(Mat &mat){
 
 	LineFormation lf;
 	vector<Rect> rects = lf.findLines(result.first);
-	debug(image, rects, "scaledResult");
+//	debug(image, rects, "scaledResult");
 	for(unsigned int i = 0, len = rects.size(); i < len; ++i){
 		Rect r = rects[i];
 		rects[i] = pyramid.reScale(r);
