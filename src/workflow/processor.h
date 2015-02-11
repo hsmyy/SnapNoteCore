@@ -167,8 +167,8 @@ public:
 		string borderOutPath = borderOut + "/" + FileUtil::getFileName(input);
 		string turnOutPath = turnOut + "/" + FileUtil::getFileName(input);
 
-		imshow("cross",crossBD);
-		waitKey();
+//		imshow("cross",crossBD);
+//		waitKey();
 		imwrite(borderOutPath, crossBD);
 		normalize(outputBD, outputBD, 0, 255, NORM_MINMAX);
 		outputBD.convertTo(outputBD, CV_8UC1);

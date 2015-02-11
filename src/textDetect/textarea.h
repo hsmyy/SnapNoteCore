@@ -5,7 +5,7 @@
 #include <opencv2/opencv.hpp>
 #include <cmath>
 #include <iostream>
-#include "opencv2/text.hpp"
+//#include "opencv2/text.hpp"
 #include "opencv2/core/utility.hpp"
 #include <string.h>
 #include <stdlib.h>
@@ -14,9 +14,11 @@
 #include <unistd.h>
 #include "../borderPosition/border.h"
 
+#include "../textExtraction/textExtraction.h"
+
 using namespace std;
 using namespace cv;
-using namespace cv::text;
+//using namespace cv::text;
 
 size_t min(size_t x, size_t y, size_t z)
 {
@@ -66,20 +68,20 @@ bool isRepetitive(const string& s)
 }
 
 
-void er_draw(vector<Mat> &channels, vector<vector<ERStat> > &regions, vector<Vec2i> group, Mat& segmentation)
-{
-    for (int r=0; r<(int)group.size(); r++)
-    {
-        ERStat er = regions[group[r][0]][group[r][1]];
-        if (er.parent != NULL) // deprecate the root region
-        {
-            int newMaskVal = 255;
-            int flags = 4 + (newMaskVal << 8) + FLOODFILL_FIXED_RANGE + FLOODFILL_MASK_ONLY;
-            floodFill(channels[group[r][0]],segmentation,Point(er.pixel%channels[group[r][0]].cols,er.pixel/channels[group[r][0]].cols),
-                      Scalar(255),0,Scalar(er.level),Scalar(0),flags);
-        }
-    }
-}
+//void er_draw(vector<Mat> &channels, vector<vector<ERStat> > &regions, vector<Vec2i> group, Mat& segmentation)
+//{
+//    for (int r=0; r<(int)group.size(); r++)
+//    {
+//        ERStat er = regions[group[r][0]][group[r][1]];
+//        if (er.parent != NULL) // deprecate the root region
+//        {
+//            int newMaskVal = 255;
+//            int flags = 4 + (newMaskVal << 8) + FLOODFILL_FIXED_RANGE + FLOODFILL_MASK_ONLY;
+//            floodFill(channels[group[r][0]],segmentation,Point(er.pixel%channels[group[r][0]].cols,er.pixel/channels[group[r][0]].cols),
+//                      Scalar(255),0,Scalar(er.level),Scalar(0),flags);
+//        }
+//    }
+//}
 
 bool   sort_by_lenght(const string &a, const string &b){return (a.size()>b.size());}
 
@@ -1036,12 +1038,11 @@ int textDetect(Mat& src, vector<Mat>& textPieces, bool border){
 		else{
 			textPieces = rst;
 		}
-	}
-	if(ret==0){
+	}else if(ret==0){
 		textPieces.push_back(src);
-	}
-	if(ret==-1){
-		//TODO David's algorithm here!
-
+	}else if(ret==-1){
+		TextExtraction te;
+		vector<Rect> regions = te.textExtract(src);
+		textPieces = te.findRegions(src, regions);
 	}
 }
