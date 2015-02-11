@@ -30,6 +30,7 @@
 #include <strstream>
 #include <fstream>
 #include "integration.h"
+#include "../salientRecognition/rc/main.h"
 
 using namespace cv;
 
@@ -433,13 +434,13 @@ bool isLine(cv::Mat& mat, double& linkScore, double& linkSpace, cv::Point pt1, c
 	maxTb=max(maxTb,tb);
 	//cout<<"grad "<<maxLr<<" "<<maxTb<<endl;
 	if(procMode==3&&mode==1&&maxLr<11&&maxTb<7){
-		if (debug) cout<<"false0"<<endl;
+		//if (debug) cout<<"false0"<<endl;
 		return false;
 	}
 	MAXLINK = 10;
 	if (mode<=2&&maxLink >= MAXLINK)
 	{
-		if (debug) std::cout<<"true1 "<<maxLink<<std::endl;
+		//if (debug) std::cout<<"true1 "<<maxLink<<std::endl;
 		linkScore = maxLink;
 		linkSpace = cutcount;//maxSpace;
 		if(linkSpace==0) linkSpace=1;
@@ -447,10 +448,10 @@ bool isLine(cv::Mat& mat, double& linkScore, double& linkSpace, cv::Point pt1, c
 	}
 	if (maxSpace >= threshhold)
 	{
-		if (debug) std::cout<<"false1 "<<maxSpace<<" "<<maxLink<<" "<<threshhold<<std::endl;
+		//if (debug) std::cout<<"false1 "<<maxSpace<<" "<<maxLink<<" "<<threshhold<<std::endl;
 		return false;
 	}
-	if (debug) std::cout<<"true2 "<<maxSpace<<" "<<maxLink<<std::endl;
+	//if (debug) std::cout<<"true2 "<<maxSpace<<" "<<maxLink<<std::endl;
 	linkScore = maxLink;
 	return true;
 }
@@ -783,6 +784,8 @@ bool toushi(CvLinePolar2* line1, CvLinePolar2* line2,bool debug){
 		else
 			return true;
 	}
+	if(fabs(line1->angle-line2->angle)<0.05)
+		return true;
 	return false;
 }
 
@@ -1106,7 +1109,7 @@ void turnImage(Mat& src, Mat& turned, vector<Point2f> corners, double scale){
 	turned = quad.clone();
 }
 
-void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses, priority_queue<quadrNode>& qn, vector<OppositeLines> opplineVector){
+void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses, priority_queue<quadrNode>& qn, vector<OppositeLines> opplineVector, bool binary){
 	//output it
 	std::vector<cv::Point2f> corners;
 //	cout<<"size "<<src.cols<<" "<<src.rows<<endl;
@@ -1115,11 +1118,14 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses, prior
 	int mscore = qn.top().score;
 
 	vector<quadrNode> top10;
+
 	for(int i=0;qn.size()>0&&(i<20||qn.top().score>mscore/3);i++){
 		top10.push_back(qn.top());
 		qn.pop();
 	}
-	qn.empty();
+
+	while(!qn.empty()) qn.pop();
+
 	int doubtCount = 0;
 	int i0 = 0;
 	for (;i0<top10.size()&&i0<30;i0++){
@@ -1234,7 +1240,7 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses, prior
 
 	string myreason;
 
-	bool doubtThis = doubtShape(corners,slt);
+	bool doubtThis = binary?false:doubtShape(corners,slt);
 	if(doubtThis)
 		doubtCount++;
 
@@ -1273,6 +1279,8 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses, prior
 		//spaceScore[curphase][scoreCur[curphase]]=((int)top10[i0].score);
 		lineScore[curphase][scoreCur[curphase]++]=((int)top10[i0].score);
 		//cout<<"phase-cur: "<<scoreCur[curphase]<<endl;
+		if(binary)
+			return;
 	}
 	///cross = dst.clone();
 	///turned = quad.clone();
@@ -1299,17 +1307,20 @@ void myNormalSize(Mat& src, Mat& tsrc, int type){
 }
 
 //procMode: 0, default; 1, big; 2, micro; 3, deep1
-int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& cross){
+int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& cross, bool binary){
 
 	scoreCur[0] = 0;scoreCur[1] = 0;scoreCur[2] = 0;
 	//step0: to gray picture
 
 
     cv::Mat bw,bw0;
-
-	cv::cvtColor(tsrc, bw, CV_BGR2GRAY);
-
-	//step1: edge detection
+    if(!binary)
+    	cv::cvtColor(tsrc, bw, CV_BGR2GRAY);
+    else{
+    	Mat myRGB = convertToVisibleMat<float>(tsrc);
+    	cvtColor(myRGB, bw, CV_BGR2GRAY);
+    }
+    //step1: edge detection
 	cv::Mat pic1;
 	int ddepth = 3;
 
@@ -1322,7 +1333,9 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
 	cv::addWeighted( abs_grad_x, 1, abs_grad_y, 1, 0, grad);
 
 	cv::threshold(grad,pic1,lighting,255,CV_THRESH_TOZERO);
-
+	if(binary){
+	imshow("grad",grad);
+	waitKey();}
 	std::cout<<"img size: "<<pic1.cols<<" "<<pic1.rows<<std::endl;
 
 	//step2: Hough transform
@@ -1356,7 +1369,7 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
 			pt2.y = line->y2;//cvRound(y0 - 1000*(a));
 			cv::Mat pic11 = pic1.clone();
 			fakeLines[i] = 1;
-/*  //if(fabs(line->angle-CV_PI/2)<CV_PI/6){
+/*  if(binary){
 			cv::line( pic11, pt1, pt2, CV_RGB(255,255,255),6);
 
 			std::cout<<"LINE "<<i<<": "<<line->score<<" "<<line->rho<<" "<<line->angle<<std::endl;
@@ -1367,7 +1380,7 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
 			cv::imshow("image", pic3);
 			//cv::imshow("image", pic11);
 			cv::waitKey();
-		//}
+		}
 */
 
 		}
@@ -1419,8 +1432,8 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
 				oppLines.one = lineSorted[i];
 				oppLines.two = lineSorted[j];
 /**/
-				if(i==5&&j==8)
-					std::cout<<"carrot: "<<opplineVector.size()<<std::endl;
+//				if(i==0&&j==2)
+//					std::cout<<"carrot: "<<opplineVector.size()<<std::endl;
 
 				if(std::find(lines2.begin(),lines2.end(),i)==lines2.end())
 					lines2.push_back(i);
@@ -1437,6 +1450,7 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
 	std::cout<<"opposite pair "<<opplineVector.size()<<std::endl;
 	int vecsize = opplineVector.size()>500?500:opplineVector.size();
 	/*
+	if(binary)
 	for(int s=0;s<opplineVector.size();s++){
 		cv::Mat pic2 = pic1.clone();
 		CvLinePolar2* line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[s].one);
@@ -1477,10 +1491,10 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
 		//resize(pic2, pic3, sz);
 
 		std::cout<<"s,one,two "<<s<<" "<<opplineVector[s].one<<" "<<opplineVector[s].two<<std::endl;
-		if(fabs(line->angle-CV_PI/2)<CV_PI/6){
+		//if(fabs(line->angle-CV_PI/2)<CV_PI/6){
 			cv::imshow("image", pic2);
 			cv::waitKey();
-		}
+		//}
 
 	}
 */
@@ -1651,8 +1665,8 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
                 	angleSum -= CV_PI;
 
                 bool debug = false;
-//                if(k>0&&l>0)
-//                	debug = true;
+                if(k==0&&l==2)
+                	debug = true;
 
                 Vec4i segs[4];
 				segs[0]=lines1[pair1.one];
@@ -1688,12 +1702,36 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
 	{
 //		std::cout<<"final "<<finalK<<" "<<finalL<<std::endl;
 
-		showResult(tsrc,tslt,cross,qn,opplineVector);
+		showResult(tsrc,tslt,cross,qn,opplineVector,binary);
 
 		return 0;
 	}
 
 	return -1;
+}
+
+int procBinary(Mat orig, Mat src, int procMode, Mat& cross, Mat& turned){
+	vector<vector<Point2f> > crosses;
+	Mat tsrc,torig;
+	myNormalSize(orig,torig,CV_32S);
+	myNormalSize(src,tsrc,CV_32FC3);
+
+	lighting = 180.0;
+	curphase = 0;
+	modifyAttr(procMode,0);
+	process(tsrc,tsrc,procMode,crosses,true);
+	if(crosses.size()>0){
+		vector<Point2f> corners = crosses[0];
+
+		drawResult(torig, cross, corners);
+		turnImage(orig, turned, corners, scale);
+		return 0;
+	}
+	else{
+		cross = Mat::zeros(src.rows,src.cols,CV_32SC3);
+		turned = Mat::zeros(src.rows,src.cols,CV_32SC3);
+		return -1;
+	}
 }
 
 //procMode: 0, default; 1, big; 2, micro; 3, deep1
@@ -1720,17 +1758,17 @@ int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross,  Mat& turned){
 		lighting = 180.0;
 		curphase = 0;
 		modifyAttr(procMode,run);
-		int result = process(tsrc, tslt, procMode,cross_l);
+		int result = process(tsrc, tslt, procMode,cross_l,false);
 
 		if(doubt){
 			lighting = 110.0;
 			curphase = 1;
-			result = process(tsrc, tslt, procMode,cross_m);
+			result = process(tsrc, tslt, procMode,cross_m,false);
 		}
 		if(doubt){
 			lighting = 40.0;
 			curphase = 2;
-			result = process(tsrc, tslt, procMode,cross_s);
+			result = process(tsrc, tslt, procMode,cross_s,false);
 		}
 		for(int j=0;j<30&&j<cross_l.size();j++){
 			crosses.push_back(cross_l[j]);

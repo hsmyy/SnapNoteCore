@@ -14,6 +14,7 @@
 #include "../salientRecognition/execute.h"
 #include "../preprocessing/utils/FileUtil.h"
 #include "../borderPosition/border.h"
+#include "../textDetect/textarea.h"
 #include "../preprocessing/binarize/binarize.h"
 #include "../preprocessing/deskew/deskew.h"
 #include "../preprocessing/GaussianSPDenoise/denoise.h"
@@ -38,6 +39,7 @@ public:
 	const static string SALIENT;
 	const static string BORDER;
 	const static string TURN;
+	const static string TEXT;
 	const static string BINARIZE;
 	const static string DENOISE;
 	const static string DESKEW;
@@ -138,6 +140,7 @@ public:
 		string salientOut = config.getAndErase(SALIENT);
 		string borderOut = config.getAndErase(BORDER);
 		string turnOut = config.getAndErase(TURN);
+		string textOut = config.getAndErase(TEXT);
 		if (salientOut.empty() || borderOut.empty()) {
 			cerr
 					<< "salient output or border output is empty. (in config file)!"
@@ -157,16 +160,15 @@ public:
 		imwrite(salientOutPath, outputFileSRC);
 		//cout<<outputSRC(Rect(0, 0, 500, 500))<<endl;
 
-//		int res;
-//		if (src.isResultUseful(outputSRC)) {
 		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
-//		} else {
-//			res = mainProc(img, outputSRC, 0, crossBD, outputBD);
-//		}
+		if(res==-1)
+			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
 
 		string borderOutPath = borderOut + "/" + FileUtil::getFileName(input);
 		string turnOutPath = turnOut + "/" + FileUtil::getFileName(input);
 
+		imshow("cross",crossBD);
+		waitKey();
 		imwrite(borderOutPath, crossBD);
 		normalize(outputBD, outputBD, 0, 255, NORM_MINMAX);
 		outputBD.convertTo(outputBD, CV_8UC1);
@@ -174,6 +176,11 @@ public:
 
 		if (res == -1)
 			outputBD = img;
+
+		vector<Mat> textPieces;
+		textDetect(outputBD, textPieces, res==-1?false:true);
+
+		//TODO process all the text pieces!
 
 		cout << "Preprocessing..." << endl;
 		Mat pre = outputBD;
@@ -220,6 +227,7 @@ public:
 		const string Processor::SALIENT = "salient";
 		const string Processor::BORDER = "border";
 		const string Processor::TURN = "turn";
+		const string Processor::TEXT = "text";
 		const string Processor::BINARIZE = "binarize";
 		const string Processor::DENOISE = "denoise";
 		const string Processor::DESKEW = "deskew";
