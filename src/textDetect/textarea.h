@@ -822,7 +822,7 @@ int detectText2(Mat& orig, Mat& src, vector<Mat>& rst, bool border){
 		secCt = 0;
 	}
 
-	if(maxCt>600||maxCt<100||maxCt<2*secCt||!(maxTp==-1||fabs(tpK[maxTp])<0.5))
+	if(maxCt>600||maxCt<90||maxCt<2*secCt||!(maxTp==-1||fabs(tpK[maxTp])<0.5))
 	{
 		return -1;
 	}

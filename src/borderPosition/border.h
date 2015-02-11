@@ -1333,9 +1333,7 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
 	cv::addWeighted( abs_grad_x, 1, abs_grad_y, 1, 0, grad);
 
 	cv::threshold(grad,pic1,lighting,255,CV_THRESH_TOZERO);
-	if(binary){
-	imshow("grad",grad);
-	waitKey();}
+
 	std::cout<<"img size: "<<pic1.cols<<" "<<pic1.rows<<std::endl;
 
 	//step2: Hough transform
@@ -1728,8 +1726,8 @@ int procBinary(Mat orig, Mat src, int procMode, Mat& cross, Mat& turned){
 		return 0;
 	}
 	else{
-		cross = Mat::zeros(src.rows,src.cols,CV_32SC3);
-		turned = Mat::zeros(src.rows,src.cols,CV_32SC3);
+		cross = orig;//Mat::zeros(src.rows,src.cols,CV_32SC3);
+		turned = orig;Mat::zeros(src.rows,src.cols,CV_32SC3);
 		return -1;
 	}
 }
