@@ -15,7 +15,7 @@
 #include "../preprocessing/deskew/deskew.h"
 #include "../preprocessing/binarize/binarize.h"
 #include "../preprocessing/utils/OCRUtil.h"
-#include "../util/util.h"
+#include "../util/os.h"
 
 using namespace std;
 
