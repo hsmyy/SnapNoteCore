@@ -226,7 +226,7 @@ int chonghe(int line0, int line2, int l2, int r2){
 	if(l2>=l1&&r2<=r1) ret = r2-l2;
 	if(l1>=l2&&r2<=r1) ret = r2-l1;
 	if(l2>=l1&&r2>=r1) ret = r1-l2;
-	cout<<"chonghe: "<<ret<<" "<<l1<<" "<<r1<<" "<<l2<<" "<<r2<<endl;
+	//cout<<"chonghe: "<<ret<<" "<<l1<<" "<<r1<<" "<<l2<<" "<<r2<<endl;
 	return ret;
 }
 int sampleLeft(Mat& src, vector<cv::Vec4i>& lines, float& k){
@@ -262,9 +262,9 @@ int sampleLeft(Mat& src, vector<cv::Vec4i>& lines, float& k){
 		bool found = false;
 		for(int j=0;j<blocks.size();j++){
 
-			cout<<"yy: "<<lastY[j]<<" "<<ym<<" ";
+			//cout<<"yy: "<<lastY[j]<<" "<<ym<<" ";
 			if(chonghe(line[0],line[2],left[j],right[j])>20&&fabs(ym-lastY[j])<=50){
-				cout<<"found! "<<j<<" "<<left[j]<<" "<<right[j]<<" "<<lastY[j]<<" "<<xm<<" "<<ym<<" "<<endl;
+				//cout<<"found! "<<j<<" "<<left[j]<<" "<<right[j]<<" "<<lastY[j]<<" "<<xm<<" "<<ym<<" "<<endl;
 				found = true;
 
 //				float curK = (mylefty-lefty[j])/(myleft-left[j]);
@@ -279,7 +279,7 @@ int sampleLeft(Mat& src, vector<cv::Vec4i>& lines, float& k){
 			}
 		}
 		if(!found){
-			cout<<"new! "<<blocks.size()<<endl;
+			//cout<<"new! "<<blocks.size()<<endl;
 			vector<Vec4i> newBlock;
 			newBlock.push_back(line);
 			blocks.push_back(newBlock);
@@ -300,7 +300,7 @@ int sampleLeft(Mat& src, vector<cv::Vec4i>& lines, float& k){
 	set<int> subs;
 
 	for(int i=0;i<blocks.size();i++){
-		cout<<"block size: "<<blocks[i].size()<<endl;
+		//cout<<"block size: "<<blocks[i].size()<<endl;
 		if(subs.find(i)!=subs.end())
 			continue;
 		vector<Vec4i> block1 = blocks[i];
@@ -348,13 +348,13 @@ int sampleLeft(Mat& src, vector<cv::Vec4i>& lines, float& k){
 		}
 	}
 	block = blocks[maxTp];
-	cout<<"final block size: "<<block.size()<<endl;
+	//cout<<"final block size: "<<block.size()<<endl;
 //	k = ks[maxTp];
 
 	//find K value of lines
 	//k = xielv();
-	cout<<"xielv left: "<<k<<endl;
-	if(k>999999&&k<1000000)
+	//cout<<"xielv left: "<<k<<endl;
+	if(k>99999)
 		return 2;
 	return 1;
 	/*
@@ -495,11 +495,12 @@ int sampleRight(vector<cv::Vec4i>& lines, float& k){
 	}
 	cout<<maxCt<<endl;
 	if(vertN>70) {
-		cout<<"xielv right: inf"<<endl;
+		//cout<<"xielv right: inf"<<endl;
+		k=99999.9;
 		return 2;
 	}
 	if(maxCt>=0){
-		cout<<"xielv right: "<<tpK[maxTp]<<endl;
+		//cout<<"xielv right: "<<tpK[maxTp]<<endl;
 		k = tpK[maxTp];
 		return 1;
 	}
@@ -709,7 +710,7 @@ void textBorder(Mat& orig, Mat& src, vector<Mat>& rst){
 	rst.push_back(turned);
 }
 
-int detectText2(Mat& orig, Mat& src, vector<Mat>& rst){
+int detectText2(Mat& orig, Mat& src, vector<Mat>& rst, bool border){
 	int result = -1;
 
 	Mat image,grad_x,abs_grad_x,grad_y,abs_grad_y,grad;
@@ -783,13 +784,17 @@ int detectText2(Mat& orig, Mat& src, vector<Mat>& rst){
 	int secCt = 0;
 
 	for(int i=0;i<vsize;i++){
-		if(tpN[i]>maxCt&&(fabs(tpK[i])<0.5||fabs(tpK[i])>99999)){
+		if(tpN[i]>maxCt){
 			if(maxCt>secCt){
 				secCt = maxCt;
 				secTp = maxTp;
 			}
 			maxCt = tpN[i];
 			maxTp = i;
+		}
+		else if(tpN[i]>secCt){
+			secCt = tpN[i];
+			secTp = i;
 		}
 	}
 
@@ -810,8 +815,17 @@ int detectText2(Mat& orig, Mat& src, vector<Mat>& rst){
 	//Test Paper or graph photo
 
 	cout<<"is paper? "<<maxCt<<" "<<secCt<<" "<<(maxCt>=2*secCt)<<endl;
-	if(maxCt<100||maxCt<2*secCt)
+	if(maxTp!=-1&&fabs(tpK[maxTp])>0.5&&(secTp==-1||fabs(tpK[secTp])<0.2)&&secCt>200){
+		maxTp = secTp;
+		maxCt = secCt;
+		secTp = 0;
+		secCt = 0;
+	}
+
+	if(maxCt>600||maxCt<100||maxCt<2*secCt||!(maxTp==-1||fabs(tpK[maxTp])<0.5))
+	{
 		return -1;
+	}
 
 	//vertical direction
 	if(maxTp==-1){
@@ -895,6 +909,8 @@ int detectText2(Mat& orig, Mat& src, vector<Mat>& rst){
 		}
 
 		int elimCount = 1;
+		bool edgeFail = false;
+
 		while(elimCount>0){
 			elimCount = 0;
 			vector<int> ys,xs;
@@ -903,6 +919,8 @@ int detectText2(Mat& orig, Mat& src, vector<Mat>& rst){
 				xs.push_back(it->second);
 				//cout<<"POINT: "<<it->first<<" "<<it->second<<endl;
 			}
+
+			if(xs.size()<2){edgeFail = true; break;}
 
 			if(xs[0]-xs[1]>20)
 			{
@@ -942,7 +960,9 @@ int detectText2(Mat& orig, Mat& src, vector<Mat>& rst){
 //		imshow("image2", src5);
 //		waitKey();
 
-		float kl = xielv(dict,1);
+		float kl = 99999.9;
+		if(!edgeFail)
+			kl = xielv(dict,1);
 
 		dict.clear();
 		for (int i = 0; i < nonZeroCoordinates.total(); i++ ) {
@@ -961,7 +981,7 @@ int detectText2(Mat& orig, Mat& src, vector<Mat>& rst){
 		}
 
 		elimCount = 1;
-		while(elimCount>0){
+		while(elimCount>0&&!edgeFail){
 			elimCount = 0;
 			vector<int> ys,xs;
 			for(map<int,int>::iterator it=dict.begin();it!=dict.end();it++){
@@ -969,7 +989,7 @@ int detectText2(Mat& orig, Mat& src, vector<Mat>& rst){
 				xs.push_back(it->second);
 				//cout<<"POINT: "<<it->first<<" "<<it->second<<endl;
 			}
-
+			if(xs.size()<2){edgeFail = true; break;}
 			if(xs[1]-xs[0]>20)
 			{
 				map<int,int>::iterator it = dict.find(ys[0]);
@@ -994,7 +1014,9 @@ int detectText2(Mat& orig, Mat& src, vector<Mat>& rst){
 //		}
 //		imshow("image3", src6);
 
-		float kr = xielv(dict,1);
+		float kr = 99999.9;
+		if(!edgeFail)
+			xielv(dict,1);
 //		cout<<"xielv: "<<kl<<" "<<kr<<endl;
 //		waitKey();
 
@@ -1012,8 +1034,8 @@ int detectText2(Mat& orig, Mat& src, vector<Mat>& rst){
 		myDrawLine(1,btx,bt+10,k0,src.cols,src.rows);
 		myDrawLine(2,left-10,lefty,kl,src.cols,src.rows);
 		myDrawLine(3,right+10,righty,kr,src.cols,src.rows);
-
-		textBorder(orig, src, rst);
+		if(!border)
+			textBorder(orig, src, rst);
 
 //		imshow("imageF",src7);
 //		waitKey();
@@ -1029,7 +1051,7 @@ int textDetect(Mat& src, vector<Mat>& textPieces, bool border){
 	scale = 1.0;
 	myNormalSize(src,tsrc,CV_32S);
 	vector<Mat> rst;
-	int ret = detectText2(src, tsrc,rst);
+	int ret = detectText2(src, tsrc,rst,border);
 
 	if(ret==1){
 		if(border){
