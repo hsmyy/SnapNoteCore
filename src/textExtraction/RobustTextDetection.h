@@ -23,6 +23,7 @@
 using namespace std;
 using namespace cv;
 
+#define square(x) ((x) * (x))
 /**
  * Parameters for robust text detection, quite a handful
  */
@@ -86,7 +87,9 @@ protected:
 			int * next_ptr);
 
 	Rect clamp(Rect& rect, Size size);
-
+private:
+	Mat firstPassFilter(Mat &img);
+	Mat secondPassFilter(Mat &img);
 private:
 	RobustTextParam param;
 };
@@ -128,27 +131,7 @@ pair<Mat, Rect> RobustTextDetection::apply(Mat& image) {
 	imshow("preprocess", edge_enhanced_mser);
 
 	/* Find the connected components: result set all valid connected component as true */
-	ConnectedComponent conn_comp(param.maxConnCompCount, 8);
-	Mat labelImg = conn_comp.apply(edge_enhanced_mser);
-	vector<ComponentProperty> props = conn_comp.getComponentsProperties();
-
-	Mat result(labelImg.size(), CV_8UC1, Scalar(0));
-	for (unsigned int i = 0; i < props.size(); ++i) {
-		ComponentProperty prop = props[i];
-		/* Filtered out connected components that aren't within the criteria */
-		if (prop.area < param.minConnCompArea
-				|| prop.area > param.maxConnCompArea)
-			continue;
-
-		if (prop.eccentricity < param.minEccentricity
-				|| prop.eccentricity > param.maxEccentricity)
-			continue;
-
-		if (prop.solidity < param.minSolidity)
-			continue;
-
-		result |= (labelImg == prop.labelID);
-	}
+	Mat result = firstPassFilter(edge_enhanced_mser);
 
 	/* Calculate the distance transformed from the connected components */
 	// The functions distanceTransform calculate the approximate or precise
@@ -156,18 +139,14 @@ pair<Mat, Rect> RobustTextDetection::apply(Mat& image) {
 	// For zero image pixels, the distance will obviously be zero.
 	cv::distanceTransform(result, result, CV_DIST_L2, 3);
 	result.convertTo(result, CV_32SC1);
-	conn_comp.debugCC(labelImg, result, props.size(), "first");
-//    if( !tempImageDirectory.empty() ) {
-//		imwrite( tempImageDirectory + "/out_7dist.png",                   result );
-//	}
 
 	/* Find the stroke width image from the distance transformed */
 	Mat stroke_width = computeStrokeWidth(result);
 
 	/* Filter the stroke width using connected component again */
-	conn_comp = ConnectedComponent(param.maxConnCompCount, 8);
-	labelImg = conn_comp.apply(stroke_width);
-	props = conn_comp.getComponentsProperties();
+	ConnectedComponent conn_comp = ConnectedComponent(param.maxConnCompCount, 8);
+	Mat labelImg = conn_comp.apply(stroke_width);
+	vector<ComponentProperty> props = conn_comp.getComponentsProperties();
 
 	Mat filtered_stroke_width(stroke_width.size(), CV_8UC1, Scalar(0));
 	//exclude cc with a large standard deviation:
@@ -188,9 +167,6 @@ pair<Mat, Rect> RobustTextDetection::apply(Mat& image) {
 				nonzero_vec.push_back(vec[i]);
 			}
 		}
-//        copy_if( vec.begin(), vec.end(), back_inserter(nonzero_vec), [&](int val){
-//            return val > 0;
-//        });
 
 		/* Find mean and std deviation for the connected components */
 		double sum = 0;
@@ -224,7 +200,6 @@ pair<Mat, Rect> RobustTextDetection::apply(Mat& image) {
 	}
 	namedWindow("second");
 	imshow("second", debug2nd);
-//	conn_comp.debugCC(labelImg, filtered_stroke_width, props.size(), "second");
 
 	/* Use morphological close and open to create a large connected bounding region from the filtered stroke width */
 	Mat bounding_region;
@@ -252,6 +227,103 @@ pair<Mat, Rect> RobustTextDetection::apply(Mat& image) {
 	return pair<Mat, Rect>(filtered_stroke_width, bounding_rect);
 }
 
+Mat RobustTextDetection::firstPassFilter(Mat &img){
+	ConnectedComponent conn_comp(param.maxConnCompCount, 8);
+	Mat labelImg = conn_comp.apply(img);
+	vector<ComponentProperty> props = conn_comp.getComponentsProperties();
+	Mat result(labelImg.size(), CV_8UC1, Scalar(0));
+	for (unsigned int i = 0; i < props.size(); ++i) {
+		ComponentProperty prop = props[i];
+		/* Filtered out connected components that aren't within the criteria */
+		if (prop.area < param.minConnCompArea
+				|| prop.area > param.maxConnCompArea)
+			continue;
+
+		if (prop.eccentricity < param.minEccentricity
+				|| prop.eccentricity > param.maxEccentricity)
+			continue;
+
+		if (prop.solidity < param.minSolidity)
+			continue;
+
+		result |= (labelImg == prop.labelID);
+	}
+	conn_comp.debugCC(labelImg, result, props.size(), "first");
+	return result;
+}
+
+Mat RobustTextDetection::secondPassFilter(Mat &result){
+	/* Calculate the distance transformed from the connected components */
+	// The functions distanceTransform calculate the approximate or precise
+	// distance from every binary image pixel to the nearest zero pixel.
+	// For zero image pixels, the distance will obviously be zero.
+	cv::distanceTransform(result, result, CV_DIST_L2, 3);
+	result.convertTo(result, CV_32SC1);
+
+	/* Find the stroke width image from the distance transformed */
+	Mat stroke_width = computeStrokeWidth(result);
+
+	/* Filter the stroke width using connected component again */
+	ConnectedComponent conn_comp = ConnectedComponent(param.maxConnCompCount, 8);
+	Mat labelImg = conn_comp.apply(stroke_width);
+	vector<ComponentProperty> props = conn_comp.getComponentsProperties();
+
+	Mat filtered_stroke_width(stroke_width.size(), CV_8UC1, Scalar(0));
+	//exclude cc with a large standard deviation:
+	// std / mean > 0.5
+	for (unsigned int i = 0; i < props.size(); ++i) {
+		ComponentProperty prop = props[i];
+		Mat mask = labelImg == prop.labelID;
+		Mat temp;
+		stroke_width.copyTo(temp, mask);
+
+		int area = countNonZero(temp);
+
+		/* Since we only want to consider the connected component, ignore the zero pixels */
+		vector<int> vec = Mat(temp.reshape(1, temp.rows * temp.cols));
+		vector<int> nonzero_vec;
+		for (unsigned int i = 0, len = vec.size(); i < len; ++i) {
+			if (vec[i] > 0) {
+				nonzero_vec.push_back(vec[i]);
+			}
+		}
+
+		/* Find mean and std deviation for the connected components */
+		double sum = 0;
+		for (unsigned int j = 0; j < nonzero_vec.size(); ++j) {
+			sum += nonzero_vec[j];
+		}
+		double mean = sum / area;
+
+		double accum = 0.0;
+		for (unsigned int j = 0; j < nonzero_vec.size(); ++j) {
+			int val = nonzero_vec[j];
+			accum += (val - mean) * (val - mean);
+		}
+		double std_dev = sqrt(accum / area);
+
+		/* Filter out those which are out of the prespecified ratio */
+		if ((std_dev / mean) > param.maxStdDevMeanRatio)
+			continue;
+
+		/* Collect the filtered stroke width */
+		filtered_stroke_width |= mask;
+	}
+
+	Mat debug2nd = Mat(filtered_stroke_width.size(), CV_8UC1, Scalar(0));
+	for (int y = 0; y < filtered_stroke_width.rows; ++y) {
+		for (int x = 0; x < filtered_stroke_width.cols; ++x) {
+			if (filtered_stroke_width.at<uchar>(y, x) > 0) {
+				debug2nd.at<uchar>(y, x) = 255;
+			}
+		}
+	}
+	namedWindow("second");
+	imshow("second", debug2nd);
+
+	return filtered_stroke_width;
+}
+
 Rect RobustTextDetection::clamp(Rect& rect, Size size) {
 	Rect result = rect;
 
@@ -277,9 +349,10 @@ Mat RobustTextDetection::createMSERMask(Mat& grey) {
 	/* Find MSER components */
 	vector<vector<Point> > contours;
 	vector<Rect> rects;
+
+	//delta = 8
 	Ptr<MSER> mser = MSER::create(8, param.minMSERArea, param.maxMSERArea, 0.25,
 			0.1, 100, 1.01, 0.03, 5);
-//    grey.copyTo(mat);
 	mser->detectRegions(grey, contours, rects);
 
 	/* Create a binary mask out of the MSER */
@@ -519,8 +592,6 @@ Mat RobustTextDetection::computeStrokeWidth(Mat& dist) {
 				padded.at<int>(neighbor) = stroke;
 
 			}
-
-//            neighbors.clear();
 
 			vector<Point> temp(neighbors);
 			neighbors.clear();

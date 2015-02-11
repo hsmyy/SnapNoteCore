@@ -1,6 +1,8 @@
+
 //#ifndef TEXTAREA_H
 //#define TEXTAREA_H
 //
+
 //#include <opencv2/imgproc/imgproc.hpp>
 //#include <opencv2/highgui/highgui.hpp>
 //#include "opencv2/imgproc/types_c.h"
@@ -533,7 +535,9 @@
 //	cv::resize(src, tsrc, sz);
 //}
 //
+
 //int main_textArea(){
+
 //	/*
 //	DIR              *pDir ;
 //	struct dirent    *ent  ;
@@ -569,5 +573,6 @@
 //	//detectText3(src);
 //
 //}
+
 //
-//#endif
+
