@@ -264,8 +264,8 @@ vector<Rect> LineFormation::findLines(Mat &img1i){
 		props = nextRound;
 		choosedIdx[max].clear();
 	}
-	namedWindow("textline");
-	imshow("textline", img1i);
+//	namedWindow("textline");
+//	imshow("textline", img1i);
 	//merge region twice
 	return mergeRegions(mergeRegions(textLines, img1i), img1i);
 }

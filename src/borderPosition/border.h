@@ -1334,7 +1334,7 @@ int process(cv::Mat tsrc, Mat tslt, int procMode, vector<vector<cv::Point2f> >& 
 
 	cv::threshold(grad,pic1,lighting,255,CV_THRESH_TOZERO);
 	if(binary){
-	imshow("grad",grad);
+	//imshow("grad",grad);
 	waitKey();}
 	std::cout<<"img size: "<<pic1.cols<<" "<<pic1.rows<<std::endl;
 

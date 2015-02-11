@@ -127,8 +127,8 @@ pair<Mat, Rect> RobustTextDetection::apply(Mat& image) {
 //        imwrite( tempImageDirectory + "/out_5gradient_grown.png",         gradient_grown );
 //        imwrite( tempImageDirectory + "/out_6edge_enhanced_mser.png",     edge_enhanced_mser );
 //    }
-	namedWindow("preprocess");
-	imshow("preprocess", edge_enhanced_mser);
+//	namedWindow("preprocess");
+//	imshow("preprocess", edge_enhanced_mser);
 
 	/* Find the connected components: result set all valid connected component as true */
 	Mat result = firstPassFilter(edge_enhanced_mser);
@@ -198,8 +198,8 @@ pair<Mat, Rect> RobustTextDetection::apply(Mat& image) {
 			}
 		}
 	}
-	namedWindow("second");
-	imshow("second", debug2nd);
+//	namedWindow("second");
+//	imshow("second", debug2nd);
 
 	/* Use morphological close and open to create a large connected bounding region from the filtered stroke width */
 	Mat bounding_region;
@@ -318,8 +318,8 @@ Mat RobustTextDetection::secondPassFilter(Mat &result){
 			}
 		}
 	}
-	namedWindow("second");
-	imshow("second", debug2nd);
+//	namedWindow("second");
+//	imshow("second", debug2nd);
 
 	return filtered_stroke_width;
 }

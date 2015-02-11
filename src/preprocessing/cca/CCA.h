@@ -247,6 +247,15 @@ public:
 		}
 		dst = 255 - dst;
 	}
+	static void removeGarbageSet(vector<Mat>& srcs, vector<Mat>& dsts) {
+		dsts.reserve(srcs.size());
+		dsts.clear();
+		for (unsigned int i = 0; i < srcs.size(); i++) {
+			Mat dst;
+			removeGarbage(srcs[i], dst);
+			dsts.push_back(dst);
+		}
+	}
 };
 
 #endif /* SRC_CCS_H_ */

@@ -93,6 +93,17 @@ public:
 	static void denoise(Mat& src, Mat& dst) {
 		saltPepperDenoise(src, dst);
 	}
+	static void denoiseSet(vector<Mat>& srcs, vector<Mat>& dsts)
+	{
+		dsts.reserve(srcs.size());
+		dsts.clear();
+		for(unsigned int i = 0; i < srcs.size(); i++)
+		{
+			Mat dst;
+			denoise(srcs[i], dst);
+			dsts.push_back(dst);
+		}
+	}
 };
 
 #endif /* SRC_DENOISE_H_ */

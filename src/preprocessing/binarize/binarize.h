@@ -233,6 +233,17 @@ public:
 		double optK = 0.5;
 		NiblackSauvolaWolfJolion(src, dst, WOLFJOLION, winx, winy, optK, 128);
 	}
+	static void binarizeSet(vector<Mat>& srcs, vector<Mat>& dsts)
+	{
+		dsts.reserve(srcs.size());
+		dsts.clear();
+		for(unsigned int i = 0; i < srcs.size(); i++)
+		{
+			Mat dst;
+			binarize(srcs[i], dst);
+			dsts.push_back(dst);
+		}
+	}
 
 };
 

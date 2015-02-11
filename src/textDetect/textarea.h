@@ -12,6 +12,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <set>
 #include "../borderPosition/border.h"
 
 #include "../textExtraction/textExtraction.h"

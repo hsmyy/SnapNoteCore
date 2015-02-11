@@ -109,30 +109,48 @@ public:
 
 		char pattern[512] = "[^a-zA-Z0-9]+";
 		if (singleMode) {
-			Mat dst;
+			vector<Mat> dsts;
 			if (!input.empty())
-				dst = Processor::processFile(input, config);
+				dsts = Processor::processFile(input, config);
 
 			if (!ocrOutput.empty()) {
 				string textPath = ocrOutput + "/"
 						+ FileUtil::getFileNameNoSuffix(input) + ".txt";
 				cout << "OCR to: " << textPath << endl;
 
-				string text = OCRUtil::ocrFile(dst, lang);
+				string text = ocrMats(dsts);
+
 				FileUtil::writeToFile(text, textPath);
 			}
 		} else {
-			if (!input.empty())
-				Processor::processDir(input, config);
-			if (!ocrOutput.empty() && config.size() > 0) {
-
-				OCRUtil::ocrDir(config.get(config.size() - 1).second, ocrOutput,
-						lang);
+			if (!input.empty()) {
+				vector<string> files = FileUtil::getAllFiles(input);
+				for (int i = 0; i < files.size(); i++) {
+					vector<Mat> mats = processFile(input + "/" + files[i],
+							config);
+					string text = ocrMats(mats);
+					string textPath = ocrOutput + "/"
+							+ FileUtil::getFileNameNoSuffix(files[i]) + ".txt";
+					FileUtil::writeToFile(text, textPath);
+				}
 			}
+//			Processor::processDir(input, config);
+//			if (!ocrOutput.empty() && config.size() > 0) {
+//				OCRUtil::ocrDir(config.get(config.size() - 1).second, ocrOutput,
+//						lang);
+//			}
 		}
 	}
 
-	static Mat processFile(string input, const Config conf) {
+	static string ocrMats(vector<Mat>& mats) {
+		ostringstream os;
+		for (unsigned i = 0; i < mats.size(); i++) {
+			os << OCRUtil::ocrFile(mats[i], lang) << endl;
+		}
+		return os.str();
+	}
+
+	static vector<Mat> processFile(string input, const Config conf) {
 		Config config = conf;
 		Mat img = imread(input);
 		cout << "Process " << input << endl;
@@ -161,7 +179,7 @@ public:
 		//cout<<outputSRC(Rect(0, 0, 500, 500))<<endl;
 
 		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
-		if(res==-1)
+		if (res == -1)
 			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
 
 		string borderOutPath = borderOut + "/" + FileUtil::getFileName(input);
@@ -174,48 +192,76 @@ public:
 		outputBD.convertTo(outputBD, CV_8UC1);
 		imwrite(turnOutPath, outputBD);
 
-		if (res == -1)
-			outputBD = img;
-
 		vector<Mat> textPieces;
-		textDetect(outputBD, textPieces, res==-1?false:true);
+		textDetect(outputBD, textPieces, res == -1 ? false : true);
 
 		//TODO process all the text pieces!
 
 		cout << "Preprocessing..." << endl;
-		Mat pre = outputBD;
-		cvtColor(outputBD, pre, COLOR_BGR2GRAY);
+		vector<Mat> pre = vector<Mat>(textPieces.size());
+		for (unsigned int i = 0; i < pre.size(); i++) {
+			cvtColor(textPieces[i], pre[i], COLOR_BGR2GRAY);
+		}
 
 		for (int i = 0; i < config.size(); i++) {
-			Mat cur;
+			vector<Mat> cur;
 			pair<string, string> step = config.get(i);
-			void (*process)(Mat& src, Mat& dst) = getMethod(step.first);
+			void (*process)(vector<Mat>&, vector<Mat>&) = getMethod(step.first);
 
 			string outputPath = step.second + "/"
 					+ FileUtil::getFileName(input);
 			process(pre, cur);
-			imwrite(outputPath, cur);
+			Mat all = merge(cur);
+			imwrite(outputPath, all);
 			pre = cur;
 		}
 
 		return pre;
 	}
+	static Mat merge(vector<Mat>& mats) {
+		int width = maxWidth(mats);
+		int height = totalHeight(mats);
+		int index = 0;
+		Mat dst(height, width, CV_8UC1);
+		for (unsigned int i = 0; i < mats.size(); i++) {
+			Mat roi = dst(Rect(0, index, mats[i].cols, mats[i].rows));
+			mats[i].copyTo(roi, mats[i]);
+			index += mats[i].rows;
+		}
+		return dst;
+	}
+	static int maxWidth(vector<Mat>& mats) {
+		int width = 0;
+		for (unsigned int i = 0; i < mats.size(); i++) {
+			if (width < mats[i].cols)
+				width = mats[i].cols;
+		}
+		return width;
+	}
+	static int totalHeight(vector<Mat>& mats)
+	{
+		int height = 0;
+		for (unsigned int i = 0; i < mats.size(); i++) {
+			height += mats[i].rows;
+		}
+		return height;
+	}
 	static void processDir(string input, const Config conf) {
 		vector<string> files = FileUtil::getAllFiles(input);
 		for (int i = 0; i < files.size(); i++) {
-			processFile(input + "/" + files[i], conf);
+			vector<Mat> mats = processFile(input + "/" + files[i], conf);
 		}
 	}
-	static void (*getMethod(string methodName))(Mat&, Mat&)
+	static void (*getMethod(string methodName))(vector<Mat>&, vector<Mat>&)
 			{
 				if (methodName == BINARIZE) {
-					return Binarize::binarize;
+					return Binarize::binarizeSet;
 				} else if (methodName == DENOISE) {
-					return Denoise::denoise;
+					return Denoise::denoiseSet;
 				} else if (methodName == DESKEW) {
-					return Deskew::deskew;
+					return Deskew::deskewSet;
 				} else if (methodName == CCA) {
-					return CCA::removeGarbage;
+					return CCA::removeGarbageSet;
 				} else
 					return NULL;
 			}

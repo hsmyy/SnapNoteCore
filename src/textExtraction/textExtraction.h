@@ -73,8 +73,8 @@ void TextExtraction::debug(Mat &originalImg, vector<Rect> regions, char * title)
 		Rect r = regions[i];
 		rectangle( originalImg, r, Scalar(0, 0, 255), 2);
 	}
-	namedWindow(title);
-	imshow(title, originalImg);
+//	namedWindow(title);
+//	imshow(title, originalImg);
 }
 
 vector<Mat> TextExtraction::findRegions(Mat &originalImg, vector<Rect> regions){
