@@ -18,6 +18,7 @@
 #include "../preprocessing/deskew/deskew.h"
 #include "../preprocessing/GaussianSPDenoise/denoise.h"
 #include "../preprocessing/utils/OCRUtil.h"
+#include "../preprocessing/cca/CCA.h"
 
 using namespace std;
 using namespace cv;
@@ -40,9 +41,9 @@ public:
 	const static string BINARIZE;
 	const static string DENOISE;
 	const static string DESKEW;
+	const static string CCA;
 
-
-	static string lang ;
+	static string lang;
 
 	static void usage() {
 		cout << "Please add parameters:" << endl;
@@ -123,7 +124,8 @@ public:
 				Processor::processDir(input, config);
 			if (!ocrOutput.empty() && config.size() > 0) {
 
-				OCRUtil::ocrDir(config.get(config.size() - 1).second, ocrOutput,lang);
+				OCRUtil::ocrDir(config.get(config.size() - 1).second, ocrOutput,
+						lang);
 			}
 		}
 	}
@@ -176,17 +178,12 @@ public:
 		cout << "Preprocessing..." << endl;
 		Mat pre = outputBD;
 		cvtColor(outputBD, pre, COLOR_BGR2GRAY);
-		//pre.convertTo(pre, CV_8UC1);
-
-//		imshow("output", outputBD);
-//		waitKey(0);
-//		imwrite("test/img.jpg", outputBD);
-//		cout<<outputBD<<endl;
 
 		for (int i = 0; i < config.size(); i++) {
 			Mat cur;
 			pair<string, string> step = config.get(i);
 			void (*process)(Mat& src, Mat& dst) = getMethod(step.first);
+
 			string outputPath = step.second + "/"
 					+ FileUtil::getFileName(input);
 			process(pre, cur);
@@ -210,11 +207,14 @@ public:
 					return Denoise::denoise;
 				} else if (methodName == DESKEW) {
 					return Deskew::deskew;
+				} else if (methodName == CCA) {
+					return CCA::removeGarbage;
 				} else
 					return NULL;
 			}
 
-		};
+		}
+		;
 
 		const string Processor::SEG = "seg";
 		const string Processor::SALIENT = "salient";
@@ -223,7 +223,8 @@ public:
 		const string Processor::BINARIZE = "binarize";
 		const string Processor::DENOISE = "denoise";
 		const string Processor::DESKEW = "deskew";
-		string Processor::lang = "eng";
+		const string Processor::CCA = "cca";
 
+		string Processor::lang = "eng";
 
 #endif /* IMAGE_PROCESS_SRC_WORKFLOW_PROCESSOR_H_ */

@@ -10,11 +10,34 @@
 
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <algorithm>
 using namespace std;
 using namespace cv;
 
-class CCA
-{
+struct Blob {
+	int top;
+	int bottom;
+	int left;
+	int right;
+	vector<Point> points;
+	double aspectRatio() const {
+		return (double) (right - left + 1) / (bottom - top + 1);
+	}
+	int area() const {
+		return (right - left + 1) * (bottom - top + 1);
+	}
+	double contentRatio() const {
+		return (double) points.size() / area();
+	}
+};
+
+//bool positionCmp(const Blob& b1, const Blob& b2)
+//{
+//	if()
+//	return b1.left < b2.left;
+//}
+
+class CCA {
 public:
 	static Mat labelByTwoPass(const Mat& binImg, Mat& lableImg) {
 		// connected component analysis (4-component)
@@ -110,23 +133,23 @@ public:
 		return Scalar(b, g, r);
 	}
 
-	static void labelColor(const Mat& _labelImg, Mat& _colorLabelImg) {
-		if (_labelImg.empty() || _labelImg.type() != CV_32SC1) {
+	static void labelColor(const Mat& labelImg, Mat& colorLabelImg) {
+		if (labelImg.empty() || labelImg.type() != CV_32SC1) {
 			return;
 		}
 
 		map<int, Scalar> colors;
 
-		int rows = _labelImg.rows;
-		int cols = _labelImg.cols;
+		int rows = labelImg.rows;
+		int cols = labelImg.cols;
 
-		_colorLabelImg.release();
-		_colorLabelImg.create(rows, cols, CV_8UC3);
-		_colorLabelImg = Scalar::all(0);
+		colorLabelImg.release();
+		colorLabelImg.create(rows, cols, CV_8UC3);
+		colorLabelImg = Scalar::all(0);
 
 		for (int i = 0; i < rows; i++) {
-			const int* data_src = (int*) _labelImg.ptr<int>(i);
-			uchar* data_dst = _colorLabelImg.ptr<uchar>(i);
+			const int* data_src = (int*) labelImg.ptr<int>(i);
+			uchar* data_dst = colorLabelImg.ptr<uchar>(i);
 			for (int j = 0; j < cols; j++) {
 				int pixelValue = data_src[j];
 				if (pixelValue > 1) {
@@ -147,34 +170,79 @@ public:
 		cout << "color size: " << colors.size() << endl;
 	}
 
-	static void findBlobs(const Mat &binary, vector<vector<Point> > &blobs) {
-		map<int, vector<Point> > lable2blobs;
+	static void findBlobs(const Mat &binary, vector<Blob> &blobs) {
+		map<int, Blob> lable2blobs;
 		for (int i = 0; i < binary.rows; i++) {
 			const int* data_row = binary.ptr<int>(i);
 			for (int j = 0; j < binary.cols; j++) {
 				if (data_row[j] == 0)
 					continue;
 				if (lable2blobs.count(data_row[j]) <= 0) {
-					lable2blobs[data_row[j]] = vector<Point>();
+					Blob nb;
+					nb.top = nb.left = INT_MAX;
+					nb.bottom = nb.right = INT_MIN;
+					lable2blobs[data_row[j]] = nb;
 				}
-				vector<Point>& cur = lable2blobs[data_row[j]];
-				cur.push_back(Point(i, j));
+				Blob& cur = lable2blobs[data_row[j]];
+				cur.top = min(cur.top, i);
+				cur.bottom = max(cur.bottom, i);
+				cur.left = min(cur.left, j);
+				cur.right = max(cur.right, j);
+				cur.points.push_back(Point(i, j));
 			}
 		}
 
-		cout << "lable2blobs size:" << lable2blobs.size() << endl;
 		blobs.clear();
 
-		map<int, vector<Point> >::iterator it = lable2blobs.begin();
+		map<int, Blob>::iterator it = lable2blobs.begin();
 		for (; it != lable2blobs.end(); it++) {
 			blobs.push_back(it->second);
-			if (it->second.size() > 10000)
-				cout << it->first << endl;
+			//cout << it->second.area() << endl;
 		}
-		cout << "blobs size:" << blobs.size() << endl;
+		//sort(blobs.begin(), blobs.end(), positionCmp);
 
+		cout << "blobs size:" << blobs.size() << endl;
+	}
+
+	static bool isGarbageBlob(Blob &blob, int width = 4000, int height = 3000,
+			int blobNum = 10000) {
+		double minArea = double(width / 100) * (height / 80);
+		double maxArea = double(width / (blobNum / 40))
+				* (height / (blobNum / 40));
+		maxArea = max(maxArea, (double) width / 10 * height / 10);
+
+		return ((blob.area() < minArea) || (blob.area() > maxArea)
+				|| (blob.aspectRatio() > 5.0)
+				|| (blob.aspectRatio() < (1.0 / 5))
+				|| (blob.contentRatio() < (1.0 / 8)));
+	}
+
+	static void removeGarbage(Mat& src, Mat& dst) {
+		CV_Assert(src.channels() == 1);
+		vector<Blob> blobs;
+
+		src = 255 - src;
+		//cout<<binImage(Rect(100, 100, 50 ,50))<<endl;
+
+		// connected component labeling
+		Mat labelImg, colorImg;
+		CCA::labelByTwoPass(src, labelImg);
+		CCA::labelColor(labelImg, colorImg);
+
+		CCA::findBlobs(labelImg, blobs);
+
+		dst = Mat::zeros(labelImg.rows, labelImg.cols, CV_8UC1);
+
+		for (int i = 0; i < blobs.size(); i++) {
+
+			if (CCA::isGarbageBlob(blobs[i], dst.cols, dst.rows, blobs.size()))
+				continue;
+			vector<Point>& points = blobs[i].points;
+			for (int j = 0; j < points.size(); j++) {
+				dst.ptr<uchar>(points[j].x)[points[j].y] = 255;
+			}
+		}
 	}
 };
-
 
 #endif /* SRC_CCS_H_ */
