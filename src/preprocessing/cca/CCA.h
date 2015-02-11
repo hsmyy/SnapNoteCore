@@ -207,14 +207,17 @@ public:
 	static bool isGarbageBlob(Blob &blob, int width = 4000, int height = 3000,
 			int blobNum = 10000) {
 		double minArea = double(width / 100) * (height / 80);
+
+		minArea = 25;
+
 		double maxArea = double(width / (blobNum / 40))
 				* (height / (blobNum / 40));
 		maxArea = max(maxArea, (double) width / 10 * height / 10);
 
 		return ((blob.area() < minArea) || (blob.area() > maxArea)
-				|| (blob.aspectRatio() > 5.0)
-				|| (blob.aspectRatio() < (1.0 / 5))
-				|| (blob.contentRatio() < (1.0 / 8)));
+				|| (blob.aspectRatio() > 20.0)
+				|| (blob.aspectRatio() < (1.0 / 20))
+				|| (blob.contentRatio() < (1.0 / 10)));
 	}
 
 	static void removeGarbage(Mat& src, Mat& dst) {
@@ -242,6 +245,7 @@ public:
 				dst.ptr<uchar>(points[j].x)[points[j].y] = 255;
 			}
 		}
+		dst = 255 - dst;
 	}
 };
 
