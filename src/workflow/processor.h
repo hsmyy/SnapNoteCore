@@ -134,11 +134,7 @@ public:
 					FileUtil::writeToFile(text, textPath);
 				}
 			}
-//			Processor::processDir(input, config);
-//			if (!ocrOutput.empty() && config.size() > 0) {
-//				OCRUtil::ocrDir(config.get(config.size() - 1).second, ocrOutput,
-//						lang);
-//			}
+
 		}
 	}
 
@@ -192,6 +188,7 @@ public:
 		outputBD.convertTo(outputBD, CV_8UC1);
 		imwrite(turnOutPath, outputBD);
 
+		cout<<"text detection"<<endl;
 		vector<Mat> textPieces;
 		textDetect(outputBD, textPieces, res == -1 ? false : true);
 

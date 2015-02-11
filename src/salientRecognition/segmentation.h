@@ -110,8 +110,8 @@ int segmentImage(Mat &img, Mat &segImg, double sigma, double count, int min_size
 	Mat smImg3f;
 
 	GaussianBlur(img, smImg3f, Size(), sigma, 0, BORDER_REPLICATE);
-	namedWindow("RC-SEG1");
-	imshow("RC-SEG1", smImg3f);
+//	namedWindow("RC-SEG1");
+//	imshow("RC-SEG1", smImg3f);
 
 	edge *edges = new edge[width * height * 4];
 	int num = 0;

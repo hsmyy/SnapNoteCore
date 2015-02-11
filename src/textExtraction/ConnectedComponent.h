@@ -273,8 +273,8 @@ void ConnectedComponent::debugCC(cv::Mat &labelRegionImg1i, cv::Mat &originImg1f
 			}
 		}
 	}
-	namedWindow(title);
-	imshow(title, debug1st);
+//	namedWindow(title);
+//	imshow(title, debug1st);
 }
 
 /**
