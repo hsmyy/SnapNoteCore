@@ -66,6 +66,7 @@ protected:
     void disjointUnion( int a, int b, std::vector<int>& parent  );
     int disjointFind( int a, std::vector<int>& parent, std::vector<int>& labels  );
 
+
 private:
     int connectivityType;
     int maxComponent;
