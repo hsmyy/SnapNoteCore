@@ -8,8 +8,7 @@
 #ifndef IMAGE_PROCESS_SRC_WORKFLOW_PROCESSOR_H_
 #define IMAGE_PROCESS_SRC_WORKFLOW_PROCESSOR_H_
 
-#include <opencv2/opencv.hpp>
-#include <vector>
+
 #include "../util/configUtil.h"
 #include "../salientRecognition/execute.h"
 #include "../preprocessing/utils/FileUtil.h"
@@ -58,6 +57,46 @@ public:
 				<< endl;
 
 	}
+
+	static String process_image_main(Mat& img) {
+
+		Mat *mat = new Mat(img);
+		SalientRec src;
+		Mat outputSRC, seg, crossBD, outputBD;
+
+		cout << "salient object..." << endl;
+		src.salient(img, outputSRC, seg);
+		Mat outputFileSRC = convertToVisibleMat<float>(outputSRC);
+
+		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
+		if (res == -1)
+			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
+
+		normalize(outputBD, outputBD, 0, 255, NORM_MINMAX);
+		outputBD.convertTo(outputBD, CV_8UC1);
+
+		cout << "text detection" << endl;
+		vector<Mat> textPieces;
+		textDetect(outputBD, textPieces, res == -1 ? false : true);
+
+		cout << "Preprocessing..." << endl;
+		vector<Mat> grayTexts = vector<Mat>(textPieces.size());
+		for (unsigned int i = 0; i < grayTexts.size(); i++) {
+			cvtColor(textPieces[i], grayTexts[i], COLOR_BGR2GRAY);
+		}
+
+		vector<Mat> bins, denoises, deskews;
+		Binarize::binarizeSet(grayTexts, bins);
+		Denoise::denoiseSet(bins, denoises);
+		Deskew::deskewSet(denoises, deskews);
+
+
+		cout << "OCR..." << endl;
+
+		return ocrMats(deskews);
+
+	}
+
 	static void process_main(int argc, char** argv) {
 		int oc; /*选项字符 */
 		char ec; /*无效的选项字符*/
@@ -107,7 +146,6 @@ public:
 
 		Config config(configPath);
 
-		char pattern[512] = "[^a-zA-Z0-9]+";
 		if (singleMode) {
 			vector<Mat> dsts;
 			if (!input.empty())
@@ -134,7 +172,11 @@ public:
 					FileUtil::writeToFile(text, textPath);
 				}
 			}
-
+//			Processor::processDir(input, config);
+//			if (!ocrOutput.empty() && config.size() > 0) {
+//				OCRUtil::ocrDir(config.get(config.size() - 1).second, ocrOutput,
+//						lang);
+//			}
 		}
 	}
 
@@ -188,7 +230,7 @@ public:
 		outputBD.convertTo(outputBD, CV_8UC1);
 		imwrite(turnOutPath, outputBD);
 
-		cout<<"text detection"<<endl;
+		cout << "text detection" << endl;
 		vector<Mat> textPieces;
 		textDetect(outputBD, textPieces, res == -1 ? false : true);
 
@@ -235,8 +277,7 @@ public:
 		}
 		return width;
 	}
-	static int totalHeight(vector<Mat>& mats)
-	{
+	static int totalHeight(vector<Mat>& mats) {
 		int height = 0;
 		for (unsigned int i = 0; i < mats.size(); i++) {
 			height += mats[i].rows;
@@ -263,8 +304,7 @@ public:
 					return NULL;
 			}
 
-		}
-		;
+		};
 
 		const string Processor::SEG = "seg";
 		const string Processor::SALIENT = "salient";
@@ -276,6 +316,6 @@ public:
 		const string Processor::DESKEW = "deskew";
 		const string Processor::CCA = "cca";
 
-		string Processor::lang = "eng";
+		string Processor::lang = "eng+jpn+chi_sim";
 
 #endif /* IMAGE_PROCESS_SRC_WORKFLOW_PROCESSOR_H_ */

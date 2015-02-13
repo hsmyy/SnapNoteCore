@@ -10,13 +10,8 @@
 #include "image.h"
 #include "misc.h"
 #include <opencv2/opencv.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include "opencv2/imgproc/types_c.h"
-#include "opencv2/imgproc/imgproc_c.h"
-#include <opencv2/highgui.hpp>
-#include <opencv2/highgui/highgui.hpp>
-//#include <cv.h>
-#include <highgui.h>
+#include <opencv2/imgproc/types_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 
 #define BUF_SIZE 256
 

@@ -85,7 +85,7 @@ bool blobCom(const Blob b1, const Blob b2) {
 
 int main_cca(int argc, char** argv) {
 	Mat binImage = imread("xing_14.jpg", IMREAD_GRAYSCALE);
-	namedWindow(win_name, WINDOW_KEEPRATIO);
+	namedWindow(win_name, WINDOW_AUTOSIZE);
 	Binarize::binarize(binImage, binImage);
 	//adaptiveThreshold(binImage, binImage, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY, 41, 0);
 	binImage = 255 - binImage;
@@ -95,7 +95,7 @@ int main_cca(int argc, char** argv) {
 	Mat labelImg, colorImg;
 	CCA::labelByTwoPass(binImage, labelImg);
 	CCA::labelColor(labelImg, colorImg);
-	namedWindow("color", WINDOW_KEEPRATIO);
+	namedWindow("color", WINDOW_AUTOSIZE);
 	imshow("color", colorImg);
 
 //	normalize(labelImg, labelImg, 0, 255, NORM_MINMAX);

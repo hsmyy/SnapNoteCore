@@ -8,7 +8,7 @@
 #ifndef SALIENTRECOGNITION_PYRAMID_PYRAMID_H_
 #define SALIENTRECOGNITION_PYRAMID_PYRAMID_H_
 
-#include "opencv2/imgproc.hpp"
+#include <opencv2/opencv.hpp>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>

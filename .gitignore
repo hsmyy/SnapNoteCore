@@ -41,3 +41,5 @@ src/main.cpp
 test/*
 .idea/
 images
+ocrResult
+*test.cpp

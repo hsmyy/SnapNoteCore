@@ -9,11 +9,8 @@
 #define CUT2_H_
 
 #include <opencv2/opencv.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 #include "opencv2/imgproc/types_c.h"
 #include "opencv2/imgproc/imgproc_c.h"
-#include <opencv2/highgui.hpp>
-#include <opencv2/highgui/highgui.hpp>
 #include <queue>
 #include <list>
 #include <set>
@@ -220,13 +217,13 @@ void RegionCut::modifyRegion(Mat &img1f, Mat &flag, vector<ConnectRegion> &regio
 		findMainBorder(img1f);
 //		morphologyEx(img1f, img1f, cv::MORPH_CLOSE, closeOpKernel);
 	}else{
-		img1f = 0;
+		img1f = Scalar(0);
 	}
 }
 
 Mat RegionCut::findMainBorder(Mat &img1f){
 	Mat region(img1f.size(), 4);
-	region = 0;
+	region = Scalar(0);
 
 	// find border and outside empty zone
 	for(int x = 0; x < img1f.cols; ++x){

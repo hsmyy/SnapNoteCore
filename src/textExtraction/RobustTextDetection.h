@@ -12,12 +12,10 @@
 #include <iostream>
 #include <bitset>
 #include <opencv2/opencv.hpp>
-#include <opencv2/features2d.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include "opencv2/imgproc/types_c.h"
-#include "opencv2/imgproc/imgproc_c.h"
-#include <opencv2/highgui.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/types_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include "../util/mser.h"
+
 #include "ConnectedComponent.h"
 
 using namespace std;
@@ -349,11 +347,16 @@ Mat RobustTextDetection::createMSERMask(Mat& grey) {
 	/* Find MSER components */
 	vector<vector<Point> > contours;
 	vector<Rect> rects;
+	MSER_MY::Params params = MSER_MY::Params(8, param.minMSERArea, param.maxMSERArea, 0.25,
+			0.1, 100, 1.01, 0.03, 5);
+	MSER_MY mser(params);
+
+	mser.detectRegions(grey, contours, rects);
 
 	//delta = 8
-	Ptr<MSER> mser = MSER::create(8, param.minMSERArea, param.maxMSERArea, 0.25,
-			0.1, 100, 1.01, 0.03, 5);
-	mser->detectRegions(grey, contours, rects);
+//	Ptr<MSER> mser = MSER::create(8, param.minMSERArea, param.maxMSERArea, 0.25,
+//			0.1, 100, 1.01, 0.03, 5);
+//	mser->detectRegions(grey, contours, rects);
 
 	/* Create a binary mask out of the MSER */
 	Mat mser_mask(grey.size(), CV_8UC1, Scalar(0));

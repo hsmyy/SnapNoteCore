@@ -13,8 +13,6 @@
 #ifndef BORDER_H
 #define BORDER_H
 
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc/types_c.h"
 #include "opencv2/imgproc/imgproc_c.h"
 #include <opencv2/opencv.hpp>
@@ -347,13 +345,11 @@ bool isLine(cv::Mat& mat, double& linkScore, double& linkSpace, cv::Point pt1,
 		int g_x = 0;
 		int g_y = 0;
 
-		if (procMode == 3)
-			try {
-				g_x = (int) grad_x.at<char>(x, 2 * y);
-				g_y = (int) grad_y.at<char>(x, 2 * y);
-			} catch (...) {
+		if (procMode == 3) {
+			g_x = (int) grad_x.at<char>(x, 2 * y);
+			g_y = (int) grad_y.at<char>(x, 2 * y);
 
-			}
+		}
 //		if (debug)
 //			cout<<"x: " << x << ", y:" <<y<<endl;
 
@@ -605,7 +601,7 @@ bool doubtShape(vector<cv::Point2f> corners, Mat slt) {
 	return false;
 }
 
-CV_IMPL CvSeq*
+CvSeq*
 convertToPolar(std::vector<cv::Vec4i> lines0, CvMemStorage* storage,
 		cv::Mat pic1) {
 	int count = 0;

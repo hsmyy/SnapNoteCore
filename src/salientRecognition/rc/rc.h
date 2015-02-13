@@ -9,11 +9,8 @@
 #define RC_H_
 
 #include <opencv2/opencv.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 #include "opencv2/imgproc/types_c.h"
 #include "opencv2/imgproc/imgproc_c.h"
-#include <opencv2/highgui.hpp>
-#include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <cmath>
 
@@ -172,7 +169,7 @@ void RegionContrastSalient::RegionContrast(
 	int i,len;
 	int regNum = (int)regionInfos.size();
 	if(_debug){
-		cout << "when theta=" << theta << endl;
+		//cout << "when theta=" << theta << endl;
 		int mu = 0,sigma = 0;
 		for(i = 0; i < regNum; ++i){
 			mu += regionInfos[i].pixNum;
@@ -181,7 +178,7 @@ void RegionContrastSalient::RegionContrast(
 		for(i = 0; i < regNum; ++i){
 			sigma = sqr(mu - regionInfos[i].pixNum);
 		}
-		cout << (mu / (float)pixelNum) << "," << (sqrt(sigma) / (float)pixelNum) << "," << regNum << endl;
+		//cout << (mu / (float)pixelNum) << "," << (sqrt(sigma) / (float)pixelNum) << "," << regNum << endl;
 	}
 	//calculate the distance between any pair of color set.
 
@@ -551,7 +548,6 @@ Mat RegionContrastSalient::getRC(Mat &img3f, Mat &regionIdxImage1i, int regNum, 
 
 	int QuantizeNum = quantizer.Quantize(img3f, colorIdx1i, color3fv, tmp);
 	if(QuantizeNum == 2){
-		printf("QuantizeNum == 2, %d: %s", __LINE__, __FILE__);
 		Mat sal;
 		compare(colorIdx1i, 1, sal, CMP_EQ);
 		sal.convertTo(sal, CV_32F, 1.0/ 255);

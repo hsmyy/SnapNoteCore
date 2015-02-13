@@ -258,8 +258,8 @@ vector<Rect> LineFormation::findLines(Mat &img1i){
 				nextRound.push_back(props[l]);
 			}
 		}
-		line(img1i,Point(props[choosedIdx[max][ choosedIdx.size() - 1]].centroid),
-				Point(props[choosedIdx[max][ choosedIdx.size() - 2]].centroid),
+		line(img1i,Point(props[choosedIdx[max][ choosedIdx.size() - 1]].centroid.x, props[choosedIdx[max][ choosedIdx.size() - 1]].centroid.y),
+				Point(props[choosedIdx[max][ choosedIdx.size() - 2]].centroid.x, props[choosedIdx[max][ choosedIdx.size() - 2]].centroid.y),
 				Scalar(255), 2, 8);
 		props = nextRound;
 		choosedIdx[max].clear();
