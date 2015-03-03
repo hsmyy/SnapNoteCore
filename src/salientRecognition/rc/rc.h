@@ -565,50 +565,51 @@ Mat RegionContrastSalient::getRC(Mat &img3f, Mat &regionIdxImage1i, int regNum, 
 
 	BuildRegions(regionIdxImage1i, regs, colorIdx1i, color3fv.cols);
 	Mat_<float> cDistCache1f = pairwiseColorDist(color3fv);
-	Mat centerRes = centerRC(regs, color3fv, regSal1v, sigmaDist, img3f, regionIdxImage1i, cDistCache1f, debug);
+//	Mat centerRes = centerRC(regs, color3fv, regSal1v, sigmaDist, img3f, regionIdxImage1i, cDistCache1f, debug);
 	Mat originRes = originRC(regs, color3fv, regSal1v, sigmaDist, img3f, regionIdxImage1i, cDistCache1f, debug);
 
 	if(debug){
-		namedWindow("RC-Center");
-		imshow("RC-Center", centerRes);
+//		namedWindow("RC-Center");
+//		imshow("RC-Center", centerRes);
 		namedWindow("RC-Origin");
 		imshow("RC-Origin", originRes);
 
 	}
 //	bool empty = true;
 
-	for(int i = 0; i < centerRes.rows; ++i){
-		float * centerRow = centerRes.ptr<float>(i);
+	for(int i = 0; i < originRes.rows; ++i){
+//		float * centerRow = centerRes.ptr<float>(i);
 		float * originRow = originRes.ptr<float>(i);
-		for(int j = 0; j < centerRes.cols; ++j){
+		for(int j = 0; j < originRes.cols; ++j){
 			if(isnan(originRow[j])){
 				originRow[j] = 0.f;
 			}
-			if(isnan(centerRow[j])){
-				centerRow[j] = 0.f;
-			}
-			if(originRow[j] > centerRow[j]){
-				centerRow[j] = originRow[j];
-//				empty = false;
-			}
+//			if(isnan(centerRow[j])){
+//				centerRow[j] = 0.f;
+//			}
+//			if(originRow[j] > centerRow[j]){
+//				centerRow[j] = originRow[j];
+////				empty = false;
+//			}
 		}
 	}
 	if(debug){
 		int originNum = 0;
 		int centerNum = 0;
-		for(int i = 0; i < centerRes.rows; ++i){
-			float * centerRow = centerRes.ptr<float>(i);
+		for(int i = 0; i < originRes.rows; ++i){
+//			float * centerRow = centerRes.ptr<float>(i);
 			float * originRow = originRes.ptr<float>(i);
-			for(int j = 0; j < centerRes.cols; ++j){
+			for(int j = 0; j < originRes.cols; ++j){
 				if(originRow[j] > 0){
 					originNum++;
 				}
-				if(centerRow[j] > 0){
-					centerNum++;
-				}
+//				if(centerRow[j] > 0){
+//					centerNum++;
+//				}
 			}
 		}
-		cout << "origin:" << originNum << "," << "center:" << centerNum << endl;
+//		cout << "origin:" << originNum << "," << "center:" << centerNum << endl;
+		cout << "center:" << centerNum << endl;
 	}
 
 //	if(!empty){
@@ -627,7 +628,7 @@ Mat RegionContrastSalient::getRC(Mat &img3f, Mat &regionIdxImage1i, int regNum, 
 //			}
 //		}
 //	}
-	return centerRes;
+	return originRes;
 }
 
 #endif /* RC_H_ */
