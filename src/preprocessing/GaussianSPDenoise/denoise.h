@@ -11,10 +11,17 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include "../utils/FileUtil.h"
+
 using namespace std;
 using namespace cv;
 
 class Denoise {
+
+private:
+	//@Xing, please finish this or change this for your convinience!
+	static int getKernelSizeFromNoise(double noiseLevel){
+
+	}
 public:
 	static Mat noiseReduction(Mat& img, Mat& dst, int block = 3) //block=5 is our threshold for blob size. Less than that is noise
 			{
