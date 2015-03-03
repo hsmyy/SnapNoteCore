@@ -8,7 +8,6 @@
 #ifndef IMAGE_PROCESS_SRC_WORKFLOW_PROCESSOR_H_
 #define IMAGE_PROCESS_SRC_WORKFLOW_PROCESSOR_H_
 
-
 #include "../util/configUtil.h"
 #include "../salientRecognition/execute.h"
 #include "../preprocessing/utils/FileUtil.h"
@@ -18,6 +17,7 @@
 #include "../preprocessing/deskew/deskew.h"
 #include "../preprocessing/GaussianSPDenoise/denoise.h"
 #include "../preprocessing/utils/OCRUtil.h"
+#include "../preprocessing/utils/TimeUtil.h"
 #include "../preprocessing/cca/CCA.h"
 
 using namespace std;
@@ -60,11 +60,12 @@ public:
 
 	static String process_image_main(Mat& img) {
 
-		Mat *mat = new Mat(img);
+		Mat test(1, 1, CV_8UC4);
 		SalientRec src;
 		Mat outputSRC, seg, crossBD, outputBD;
 
-		cout << "salient object..." << endl;
+		cout << "salient and border..." << endl;
+		long long int start = getSystemTime();
 		src.salient(img, outputSRC, seg);
 		Mat outputFileSRC = convertToVisibleMat<float>(outputSRC);
 
@@ -75,25 +76,36 @@ public:
 		normalize(outputBD, outputBD, 0, 255, NORM_MINMAX);
 		outputBD.convertTo(outputBD, CV_8UC1);
 
-		cout << "text detection" << endl;
+		long long int end = getSystemTime();
+		printf("salient and border time: %lld ms\n", end-start);
+
+		cout << "text detection..." << endl;
+		start = getSystemTime();
 		vector<Mat> textPieces;
 		textDetect(outputBD, textPieces, res == -1 ? false : true);
+		end = getSystemTime();
+		printf("text detection time: %lld ms\n", end-start);
 
 		cout << "Preprocessing..." << endl;
+		start = getSystemTime();
 		vector<Mat> grayTexts = vector<Mat>(textPieces.size());
 		for (unsigned int i = 0; i < grayTexts.size(); i++) {
 			cvtColor(textPieces[i], grayTexts[i], COLOR_BGR2GRAY);
 		}
-
 		vector<Mat> bins, denoises, deskews;
 		Binarize::binarizeSet(grayTexts, bins);
 		Denoise::denoiseSet(bins, denoises);
 		Deskew::deskewSet(denoises, deskews);
-
+		end = getSystemTime();
+		printf("Preprocessing time: %lld ms\n", end-start);
 
 		cout << "OCR..." << endl;
+		start = getSystemTime();
+		String text = ocrMats(deskews);
+		end = getSystemTime();
+		printf("OCR time: %lld ms\n", end-start);
 
-		return ocrMats(deskews);
+		return text;
 
 	}
 
@@ -178,6 +190,50 @@ public:
 //						lang);
 //			}
 		}
+	}
+
+	static string process_image_main(Mat& img, Mat& dst) {
+
+		SalientRec src;
+		Mat outputSRC, seg, crossBD, outputBD;
+
+		cout << "salient object..." << endl;
+		src.salient(img, outputSRC, seg);
+		Mat outputFileSRC = convertToVisibleMat<float>(outputSRC);
+
+		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
+		if (res == -1)
+			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
+
+		normalize(outputBD, outputBD, 0, 255, NORM_MINMAX);
+		outputBD.convertTo(outputBD, CV_8UC1);
+
+		cout << "text detection" << endl;
+		vector<Mat> textPieces;
+		textDetect(outputBD, textPieces, res == -1 ? false : true);
+
+		cout << "Preprocessing..." << endl;
+		vector<Mat> grayTexts = vector<Mat>(textPieces.size());
+		for (unsigned int i = 0; i < grayTexts.size(); i++) {
+			cvtColor(textPieces[i], grayTexts[i], COLOR_BGR2GRAY);
+		}
+
+		vector<Mat> bins, denoises, deskews;
+		Binarize::binarizeSet(grayTexts, bins);
+		Denoise::denoiseSet(bins, denoises);
+		Deskew::deskewSet(denoises, deskews);
+
+		dst = merge(deskews);
+
+		//return textPieces;
+		return ocrMat(dst);
+
+	}
+
+	static string ocrMat(Mat& mat) {
+		ostringstream os;
+		os << OCRUtil::ocrFile(mat, lang) << endl;
+		return os.str();
 	}
 
 	static string ocrMats(vector<Mat>& mats) {
@@ -316,6 +372,6 @@ public:
 		const string Processor::DESKEW = "deskew";
 		const string Processor::CCA = "cca";
 
-		string Processor::lang = "eng+jpn+chi_sim";
+		string Processor::lang = "eng";
 
 #endif /* IMAGE_PROCESS_SRC_WORKFLOW_PROCESSOR_H_ */
