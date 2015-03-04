@@ -83,8 +83,9 @@ public:
 		CV_Assert(src.channels() == 1);
 		Mat bin, spclean;
 		threshold(src, bin, 128, 255, THRESH_BINARY);
-		noiseReduction(bin, spclean, kernelSize);
+		noiseReduction(bin, spclean, 3);
 		GaussianBlur(spclean, dst, Size(kernelSize, kernelSize), 0);
+		threshold(dst, dst, 128, 255, THRESH_BINARY);
 	}
 
 	static void saltPepperDenoiseDir(string srcDir, string dstDir, int kernelSize = 3) {

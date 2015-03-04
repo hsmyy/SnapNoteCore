@@ -9,6 +9,8 @@
 #define PREPROCESSING_SRC_BINARIZE_H_
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include "../utils/FileUtil.h"
+#include "../noiseLevel/noiseLevel.h"
 
 using namespace std;
 using namespace cv;
@@ -225,13 +227,40 @@ public:
 			}
 		}
 	}
+	//normalize to map from 1.5-3.0 to 1.5-15
+	static double getDividor(double level)
+	{
+		if(level < 1)
+			return 3.5;
+		if(level < 1.5)
+			return level;
+		double a1 = 1.6;
+		double b1 = 3;
+		double a2 = 1;
+		double b2 = 15;
+		return (level-a1)/(b1-a1) * (b2-a2) + a2;
+	}
 	static void binarize(Mat& src, Mat& dst)
 	{
 		CV_Assert(src.channels() == 1);
-		int winx = src.cols / 10;
-		int winy = src.rows / 10;
+		//src = 255 - src;
+		Mat tmp = src.clone();
+		double level = getAvgNoiseLevel(src);
+		double dividor = getDividor(level);
+		cout<<"level : " << level<<endl;
+		//dividor = 3.5;
+		cout<<"dividor : " << dividor<<endl;
+		int winx = tmp.cols / dividor;
+		int winy = tmp.rows / dividor;
+		cout<<"winx : " <<winx << endl;
+		cout<<"winy : " <<winy << endl;
+//		int winx = 19;
+//		int winy = 19;
 		double optK = 0.5;
-		NiblackSauvolaWolfJolion(src, dst, WOLFJOLION, winx, winy, optK, 128);
+		NiblackSauvolaWolfJolion(tmp, dst, WOLFJOLION, winx, winy, optK, 128);
+		cout<<"orig rows: " << src.rows<<endl;
+		cout<<"gen rows: " << dst.rows << endl;
+//		cout<<dst(Rect(200, 200, 200, 200))<<endl;
 	}
 	static void binarizeSet(vector<Mat>& srcs, vector<Mat>& dsts)
 	{
@@ -242,6 +271,16 @@ public:
 			Mat dst;
 			binarize(srcs[i], dst);
 			dsts.push_back(dst);
+		}
+	}
+	static void binarizeDir(string srcDir, string dstDir) {
+		vector<string> files = FileUtil::getAllFiles(srcDir);
+		for (unsigned int j = 0; j < files.size(); j++) {
+			cout << srcDir + "/" + files[j] << endl;
+			Mat src = imread(srcDir + "/" + files[j], IMREAD_GRAYSCALE);
+			Mat dst;
+			binarize(src, dst);
+			imwrite(dstDir + "/" + files[j], dst);
 		}
 	}
 

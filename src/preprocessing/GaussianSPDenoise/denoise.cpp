@@ -5,7 +5,7 @@
 
 #include "../utils/OCRUtil.h"
 #include "denoise.h"
-#include "noiseLevel.h"
+//#include "noiseLevel.h"
 
 using namespace std;
 using namespace cv;

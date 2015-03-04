@@ -77,14 +77,14 @@ public:
 		outputBD.convertTo(outputBD, CV_8UC1);
 
 		long long int end = getSystemTime();
-		printf("salient and border time: %lld ms\n", end-start);
+		printf("salient and border time: %lld ms\n", end - start);
 
 		cout << "text detection..." << endl;
 		start = getSystemTime();
 		vector<Mat> textPieces;
 		textDetect(outputBD, textPieces, res == -1 ? false : true);
 		end = getSystemTime();
-		printf("text detection time: %lld ms\n", end-start);
+		printf("text detection time: %lld ms\n", end - start);
 
 		cout << "Preprocessing..." << endl;
 		start = getSystemTime();
@@ -97,13 +97,13 @@ public:
 		Denoise::denoiseSet(bins, denoises);
 		Deskew::deskewSet(denoises, deskews);
 		end = getSystemTime();
-		printf("Preprocessing time: %lld ms\n", end-start);
+		printf("Preprocessing time: %lld ms\n", end - start);
 
 		cout << "OCR..." << endl;
 		start = getSystemTime();
 		String text = ocrMats(deskews);
 		end = getSystemTime();
-		printf("OCR time: %lld ms\n", end-start);
+		printf("OCR time: %lld ms\n", end - start);
 
 		return text;
 
@@ -178,10 +178,13 @@ public:
 				for (int i = 0; i < files.size(); i++) {
 					vector<Mat> mats = processFile(input + "/" + files[i],
 							config);
-					string text = ocrMats(mats);
-					string textPath = ocrOutput + "/"
-							+ FileUtil::getFileNameNoSuffix(files[i]) + ".txt";
-					FileUtil::writeToFile(text, textPath);
+					if (!ocrOutput.empty()) {
+						string text = ocrMats(mats);
+						string textPath = ocrOutput + "/"
+								+ FileUtil::getFileNameNoSuffix(files[i])
+								+ ".txt";
+						FileUtil::writeToFile(text, textPath);
+					}
 				}
 			}
 //			Processor::processDir(input, config);

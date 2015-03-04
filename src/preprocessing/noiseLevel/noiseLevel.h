@@ -3,12 +3,10 @@
 
 #include <iostream>
 #include <limits>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc/types_c.h"
 #include "opencv2/imgproc/imgproc_c.h"
 #include <opencv2/opencv.hpp>
-#include "gsl_cdf.h"
+#include <gsl/gsl_cdf.h>
 #include "../utils/NumUtil.h"
 
 using namespace std;
@@ -78,7 +76,7 @@ Mat SortRows(Mat FeatureMatrix)
 	FeatureMatrix.row(0).copyTo(SortedFeatureMatrix.row(0));
 	for (int i = 1; i < FeatureMatrix.rows; i++) {
 		int index = i;
-		cout<<"sorting "<<i<<endl;
+		//cout<<"sorting "<<i<<endl;
 		while(index>0)
 		{
 			bool cmp = false;
@@ -177,7 +175,7 @@ int noiseLevel(Mat& img, vector<double>& rst, int itr, double conf, int decim, i
 	SVD::compute(DD,matS);
 
 	matS = matS.t();
-	cout<<matS.rows<<" "<<matS.cols<<endl;
+	//cout<<matS.rows<<" "<<matS.cols<<endl;
 	double tol = getRankTol(DD,matS);
 	int r = 0;
 	for(int i=0;i<matS.cols;i++)
@@ -245,7 +243,7 @@ int noiseLevel(Mat& img, vector<double>& rst, int itr, double conf, int decim, i
 
 			sig2 = eigv.at<double>(eigv.rows-1,0);
 		}
-		cout<<"sig2 "<<sig2<<endl;
+		//cout<<"sig2 "<<sig2<<endl;
 
 		for(int i2=1;i2<itr;i2++){
 
@@ -283,10 +281,12 @@ int noiseLevel(Mat& img, vector<double>& rst, int itr, double conf, int decim, i
 			eigen(cov,eigv);
 
 			sig2 = eigv.at<double>(eigv.rows-1,0);
-			cout<<"sig2 "<<sig2<<endl;
+			//cout<<"sig2 "<<sig2<<endl;
 		}
-
-		rst.push_back(sqrt(sig2));
+		if(sig2 < 0.0001)
+			rst.push_back(0);
+		else
+			rst.push_back(sqrt(sig2));
 	}
 }
 
