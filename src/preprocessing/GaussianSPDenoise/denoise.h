@@ -23,7 +23,7 @@ private:
 
 	}
 public:
-	static Mat noiseReduction(Mat& img, Mat& dst, int block = 3) //block=5 is our threshold for blob size. Less than that is noise
+	static Mat noiseReduction(Mat& img, Mat& dst, int block = 3) //block=3 is our threshold for blob size. Less than that is noise
 			{
 		CV_Assert(img.channels() == 1);
 		dst.create(img.rows, img.cols, img.type());
