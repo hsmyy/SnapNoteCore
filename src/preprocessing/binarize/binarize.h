@@ -243,34 +243,32 @@ public:
 	static void binarize(Mat& src, Mat& dst)
 	{
 		CV_Assert(src.channels() == 1);
-		//src = 255 - src;
 		Mat tmp = src.clone();
 		double level = getAvgNoiseLevel(src);
 		double dividor = getDividor(level);
-		cout<<"level : " << level<<endl;
-		//dividor = 3.5;
-		cout<<"dividor : " << dividor<<endl;
+//		cout<<"level : " << level<<endl;
+//		dividor = 3.5;
+//		cout<<"dividor : " << dividor<<endl;
 		int winx = tmp.cols / dividor;
 		int winy = tmp.rows / dividor;
-		cout<<"winx : " <<winx << endl;
-		cout<<"winy : " <<winy << endl;
+//		cout<<"winx : " <<winx << endl;
+//		cout<<"winy : " <<winy << endl;
 //		int winx = 19;
 //		int winy = 19;
 		double optK = 0.5;
 		NiblackSauvolaWolfJolion(tmp, dst, WOLFJOLION, winx, winy, optK, 128);
-		cout<<"orig rows: " << src.rows<<endl;
-		cout<<"gen rows: " << dst.rows << endl;
+//		cout<<"orig rows: " << src.rows<<endl;
+//		cout<<"gen rows: " << dst.rows << endl;
 //		cout<<dst(Rect(200, 200, 200, 200))<<endl;
 	}
 	static void binarizeSet(vector<Mat>& srcs, vector<Mat>& dsts)
 	{
-		dsts.reserve(srcs.size());
-		dsts.clear();
+		CV_Assert(srcs.size() == dsts.size());
+//		dsts.reserve(srcs.size());
+//		dsts.clear();
 		for(unsigned int i = 0; i < srcs.size(); i++)
 		{
-			Mat dst;
-			binarize(srcs[i], dst);
-			dsts.push_back(dst);
+			binarize(srcs[i], dsts[i]);
 		}
 	}
 	static void binarizeDir(string srcDir, string dstDir) {

@@ -103,13 +103,10 @@ public:
 	}
 	static void denoiseSet(vector<Mat>& srcs, vector<Mat>& dsts)
 	{
-		dsts.reserve(srcs.size());
-		dsts.clear();
+		CV_Assert(srcs.size() == dsts.size());
 		for(unsigned int i = 0; i < srcs.size(); i++)
 		{
-			Mat dst;
-			denoise(srcs[i], dst);
-			dsts.push_back(dst);
+			denoise(srcs[i], dsts[i]);
 		}
 	}
 };

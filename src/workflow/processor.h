@@ -58,57 +58,6 @@ public:
 
 	}
 
-	static String process_image_main(Mat& img) {
-
-		Mat test(1, 1, CV_8UC4);
-		SalientRec src;
-		Mat outputSRC, seg, crossBD, outputBD;
-
-		cout << "salient and border..." << endl;
-		long long int start = getSystemTime();
-		src.salient(img, outputSRC, seg);
-		Mat outputFileSRC = convertToVisibleMat<float>(outputSRC);
-
-		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
-		if (res == -1)
-			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
-
-		normalize(outputBD, outputBD, 0, 255, NORM_MINMAX);
-		outputBD.convertTo(outputBD, CV_8UC1);
-
-		long long int end = getSystemTime();
-		printf("salient and border time: %lld ms\n", end - start);
-
-		cout << "text detection..." << endl;
-		start = getSystemTime();
-		vector<Mat> textPieces;
-		textDetect(outputBD, textPieces, res == -1 ? false : true);
-		end = getSystemTime();
-		printf("text detection time: %lld ms\n", end - start);
-
-		cout << "Preprocessing..." << endl;
-		start = getSystemTime();
-		vector<Mat> grayTexts = vector<Mat>(textPieces.size());
-		for (unsigned int i = 0; i < grayTexts.size(); i++) {
-			cvtColor(textPieces[i], grayTexts[i], COLOR_BGR2GRAY);
-		}
-		vector<Mat> bins, denoises, deskews;
-		Binarize::binarizeSet(grayTexts, bins);
-		Denoise::denoiseSet(bins, denoises);
-		Deskew::deskewSet(denoises, deskews);
-		end = getSystemTime();
-		printf("Preprocessing time: %lld ms\n", end - start);
-
-		cout << "OCR..." << endl;
-		start = getSystemTime();
-		String text = ocrMats(deskews);
-		end = getSystemTime();
-		printf("OCR time: %lld ms\n", end - start);
-
-		return text;
-
-	}
-
 	static void process_main(int argc, char** argv) {
 		int oc; /*选项字符 */
 		char ec; /*无效的选项字符*/
@@ -187,50 +136,59 @@ public:
 					}
 				}
 			}
-//			Processor::processDir(input, config);
-//			if (!ocrOutput.empty() && config.size() > 0) {
-//				OCRUtil::ocrDir(config.get(config.size() - 1).second, ocrOutput,
-//						lang);
-//			}
 		}
 	}
 
-	static string process_image_main(Mat& img, Mat& dst) {
+	//used in JNI
+	static vector<Mat> process_image_main(Mat& img) {
 
 		SalientRec src;
 		Mat outputSRC, seg, crossBD, outputBD;
 
-		cout << "salient object..." << endl;
+		cout << "salient and border..." << endl;
+		long long int start = getSystemTime();
 		src.salient(img, outputSRC, seg);
 		Mat outputFileSRC = convertToVisibleMat<float>(outputSRC);
 
 		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
-		if (res == -1)
+		if (res == -1) {
 			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
+		}
 
 		normalize(outputBD, outputBD, 0, 255, NORM_MINMAX);
 		outputBD.convertTo(outputBD, CV_8UC1);
 
-		cout << "text detection" << endl;
+		long long int end = getSystemTime();
+		printf("salient and border time: %lld ms\n", end - start);
+
+		cout << "text detection..." << endl;
+		start = getSystemTime();
 		vector<Mat> textPieces;
 		textDetect(outputBD, textPieces, res == -1 ? false : true);
+		end = getSystemTime();
+		printf("text detection time: %lld ms\n", end - start);
 
 		cout << "Preprocessing..." << endl;
-		vector<Mat> grayTexts = vector<Mat>(textPieces.size());
-		for (unsigned int i = 0; i < grayTexts.size(); i++) {
-			cvtColor(textPieces[i], grayTexts[i], COLOR_BGR2GRAY);
+		start = getSystemTime();
+		for (unsigned int i = 0; i < textPieces.size(); i++) {
+			cvtColor(textPieces[i], textPieces[i], COLOR_BGR2GRAY);
 		}
+		//vector<Mat> bins, denoises, deskews;
+		Binarize::binarizeSet(textPieces, textPieces);
+		Denoise::denoiseSet(textPieces, textPieces);
+		Deskew::deskewSet(textPieces, textPieces);
+		end = getSystemTime();
+		printf("Preprocessing time: %lld ms\n", end - start);
 
-		vector<Mat> bins, denoises, deskews;
-		Binarize::binarizeSet(grayTexts, bins);
-		Denoise::denoiseSet(bins, denoises);
-		Deskew::deskewSet(denoises, deskews);
+		return textPieces;
 
-		dst = merge(deskews);
+	}
 
-		//return textPieces;
-		return ocrMat(dst);
+	//used in JNI
+	static void process_image_main(Mat& img, Mat& dst) {
 
+		vector<Mat> mats = process_image_main(img);
+		dst = merge(mats);
 	}
 
 	static string ocrMat(Mat& mat) {
@@ -276,8 +234,9 @@ public:
 		//cout<<outputSRC(Rect(0, 0, 500, 500))<<endl;
 
 		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
-		if (res == -1)
+		if (res == -1) {
 			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
+		}
 
 		string borderOutPath = borderOut + "/" + FileUtil::getFileName(input);
 		string turnOutPath = turnOut + "/" + FileUtil::getFileName(input);

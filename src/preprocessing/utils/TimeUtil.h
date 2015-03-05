@@ -11,8 +11,8 @@
 #include <stdio.h>
 #include <sys/timeb.h>
 
+struct timeb t;
 long long getSystemTime() {
-    struct timeb t;
     ftime(&t);
     return 1000 * t.time + t.millitm;
 }
