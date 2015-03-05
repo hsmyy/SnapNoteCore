@@ -261,7 +261,7 @@ public:
 		}
 
 		for (int i = 0; i < config.size(); i++) {
-			vector<Mat> cur;
+			vector<Mat> cur(pre.size());
 			pair<string, string> step = config.get(i);
 			void (*process)(vector<Mat>&, vector<Mat>&) = getMethod(step.first);
 
@@ -282,7 +282,7 @@ public:
 		Mat dst(height, width, CV_8UC1);
 		for (unsigned int i = 0; i < mats.size(); i++) {
 			Mat roi = dst(Rect(0, index, mats[i].cols, mats[i].rows));
-			mats[i].copyTo(roi, mats[i]);
+			mats[i].copyTo(roi);
 			index += mats[i].rows;
 		}
 		return dst;

@@ -224,6 +224,10 @@ public:
 				{
 					output.uset(x,y,0);
 				}
+				if(output.uget(x, y) != 255 && output.uget(x, y) != 0)
+				{
+					cout<<"output.uget : " <<output.uget(x, y)<<endl;
+				}
 			}
 		}
 	}
