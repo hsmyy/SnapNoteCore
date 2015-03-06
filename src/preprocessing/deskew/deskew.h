@@ -104,13 +104,10 @@ public:
 	}
 	static void deskewSet(vector<Mat>& srcs, vector<Mat>& dsts)
 	{
-		dsts.reserve(srcs.size());
-		dsts.clear();
+		CV_Assert(srcs.size() == dsts.size());
 		for(unsigned int i = 0; i < srcs.size(); i++)
 		{
-			Mat dst;
-			deskew(srcs[i], dst);
-			dsts.push_back(dst);
+			deskew(srcs[i], dsts[i]);
 		}
 	}
 

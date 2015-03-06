@@ -8,7 +8,6 @@
 #ifndef IMAGE_PROCESS_SRC_WORKFLOW_PROCESSOR_H_
 #define IMAGE_PROCESS_SRC_WORKFLOW_PROCESSOR_H_
 
-
 #include "../util/configUtil.h"
 #include "../salientRecognition/execute.h"
 #include "../preprocessing/utils/FileUtil.h"
@@ -18,6 +17,7 @@
 #include "../preprocessing/deskew/deskew.h"
 #include "../preprocessing/GaussianSPDenoise/denoise.h"
 #include "../preprocessing/utils/OCRUtil.h"
+#include "../preprocessing/utils/TimeUtil.h"
 #include "../preprocessing/cca/CCA.h"
 
 using namespace std;
@@ -55,45 +55,6 @@ public:
 		cout
 				<< " -c Configuration file path, (method = directory). see sn.conf as an example."
 				<< endl;
-
-	}
-
-	static String process_image_main(Mat& img) {
-
-		Mat *mat = new Mat(img);
-		SalientRec src;
-		Mat outputSRC, seg, crossBD, outputBD;
-
-		cout << "salient object..." << endl;
-		src.salient(img, outputSRC, seg);
-		Mat outputFileSRC = convertToVisibleMat<float>(outputSRC);
-
-		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
-		if (res == -1)
-			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
-
-		normalize(outputBD, outputBD, 0, 255, NORM_MINMAX);
-		outputBD.convertTo(outputBD, CV_8UC1);
-
-		cout << "text detection" << endl;
-		vector<Mat> textPieces;
-		textDetect(outputBD, textPieces, res == -1 ? false : true);
-
-		cout << "Preprocessing..." << endl;
-		vector<Mat> grayTexts = vector<Mat>(textPieces.size());
-		for (unsigned int i = 0; i < grayTexts.size(); i++) {
-			cvtColor(textPieces[i], grayTexts[i], COLOR_BGR2GRAY);
-		}
-
-		vector<Mat> bins, denoises, deskews;
-		Binarize::binarizeSet(grayTexts, bins);
-		Denoise::denoiseSet(bins, denoises);
-		Deskew::deskewSet(denoises, deskews);
-
-
-		cout << "OCR..." << endl;
-
-		return ocrMats(deskews);
 
 	}
 
@@ -166,18 +127,74 @@ public:
 				for (int i = 0; i < files.size(); i++) {
 					vector<Mat> mats = processFile(input + "/" + files[i],
 							config);
-					string text = ocrMats(mats);
-					string textPath = ocrOutput + "/"
-							+ FileUtil::getFileNameNoSuffix(files[i]) + ".txt";
-					FileUtil::writeToFile(text, textPath);
+					if (!ocrOutput.empty()) {
+						string text = ocrMats(mats);
+						string textPath = ocrOutput + "/"
+								+ FileUtil::getFileNameNoSuffix(files[i])
+								+ ".txt";
+						FileUtil::writeToFile(text, textPath);
+					}
 				}
 			}
-//			Processor::processDir(input, config);
-//			if (!ocrOutput.empty() && config.size() > 0) {
-//				OCRUtil::ocrDir(config.get(config.size() - 1).second, ocrOutput,
-//						lang);
-//			}
 		}
+	}
+
+	//used in JNI
+	static vector<Mat> process_image_main(Mat& img) {
+
+		SalientRec src;
+		Mat outputSRC, seg, crossBD, outputBD;
+
+		cout << "salient and border..." << endl;
+		long long int start = getSystemTime();
+		src.salient(img, outputSRC, seg);
+		Mat outputFileSRC = convertToVisibleMat<float>(outputSRC);
+
+		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
+		if (res == -1) {
+			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
+		}
+
+		normalize(outputBD, outputBD, 0, 255, NORM_MINMAX);
+		outputBD.convertTo(outputBD, CV_8UC1);
+
+		long long int end = getSystemTime();
+		printf("salient and border time: %lld ms\n", end - start);
+
+		cout << "text detection..." << endl;
+		start = getSystemTime();
+		vector<Mat> textPieces;
+		textDetect(outputBD, textPieces, res == -1 ? false : true);
+		end = getSystemTime();
+		printf("text detection time: %lld ms\n", end - start);
+
+		cout << "Preprocessing..." << endl;
+		start = getSystemTime();
+		for (unsigned int i = 0; i < textPieces.size(); i++) {
+			cvtColor(textPieces[i], textPieces[i], COLOR_BGR2GRAY);
+		}
+		//vector<Mat> bins, denoises, deskews;
+		Binarize::binarizeSet(textPieces, textPieces);
+		Denoise::denoiseSet(textPieces, textPieces);
+		Deskew::deskewSet(textPieces, textPieces);
+		end = getSystemTime();
+		printf("Preprocessing time: %lld ms\n", end - start);
+
+		return textPieces;
+
+	}
+
+	//used in JNI
+	static void process_image_main(Mat& img, Mat& dst) {
+
+		vector<Mat> mats = process_image_main(img);
+		dst = merge(mats);
+	}
+
+	static string ocrMat(Mat& mat) {
+		ostringstream os;
+		os << OCRUtil::ocrFile(mat, lang) << endl;
+		return os.str();
 	}
 
 	static string ocrMats(vector<Mat>& mats) {
@@ -217,8 +234,9 @@ public:
 		//cout<<outputSRC(Rect(0, 0, 500, 500))<<endl;
 
 		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
-		if (res == -1)
+		if (res == -1) {
 			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
+		}
 
 		string borderOutPath = borderOut + "/" + FileUtil::getFileName(input);
 		string turnOutPath = turnOut + "/" + FileUtil::getFileName(input);
@@ -243,7 +261,7 @@ public:
 		}
 
 		for (int i = 0; i < config.size(); i++) {
-			vector<Mat> cur;
+			vector<Mat> cur(pre.size());
 			pair<string, string> step = config.get(i);
 			void (*process)(vector<Mat>&, vector<Mat>&) = getMethod(step.first);
 
@@ -264,7 +282,7 @@ public:
 		Mat dst(height, width, CV_8UC1);
 		for (unsigned int i = 0; i < mats.size(); i++) {
 			Mat roi = dst(Rect(0, index, mats[i].cols, mats[i].rows));
-			mats[i].copyTo(roi, mats[i]);
+			mats[i].copyTo(roi);
 			index += mats[i].rows;
 		}
 		return dst;
@@ -316,6 +334,6 @@ public:
 		const string Processor::DESKEW = "deskew";
 		const string Processor::CCA = "cca";
 
-		string Processor::lang = "eng+jpn+chi_sim";
+		string Processor::lang = "eng";
 
 #endif /* IMAGE_PROCESS_SRC_WORKFLOW_PROCESSOR_H_ */

@@ -11,12 +11,19 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include "../utils/FileUtil.h"
+
 using namespace std;
 using namespace cv;
 
 class Denoise {
+
+private:
+	//@Xing, please finish this or change this for your convinience!
+	static int getKernelSizeFromNoise(double noiseLevel){
+
+	}
 public:
-	static Mat noiseReduction(Mat& img, Mat& dst, int block = 3) //block=5 is our threshold for blob size. Less than that is noise
+	static Mat noiseReduction(Mat& img, Mat& dst, int block = 3) //block=3 is our threshold for blob size. Less than that is noise
 			{
 		CV_Assert(img.channels() == 1);
 		dst.create(img.rows, img.cols, img.type());
@@ -76,8 +83,9 @@ public:
 		CV_Assert(src.channels() == 1);
 		Mat bin, spclean;
 		threshold(src, bin, 128, 255, THRESH_BINARY);
-		noiseReduction(bin, spclean, kernelSize);
+		noiseReduction(bin, spclean, 3);
 		GaussianBlur(spclean, dst, Size(kernelSize, kernelSize), 0);
+		threshold(dst, dst, 128, 255, THRESH_BINARY);
 	}
 
 	static void saltPepperDenoiseDir(string srcDir, string dstDir, int kernelSize = 3) {
@@ -95,13 +103,10 @@ public:
 	}
 	static void denoiseSet(vector<Mat>& srcs, vector<Mat>& dsts)
 	{
-		dsts.reserve(srcs.size());
-		dsts.clear();
+		CV_Assert(srcs.size() == dsts.size());
 		for(unsigned int i = 0; i < srcs.size(); i++)
 		{
-			Mat dst;
-			denoise(srcs[i], dst);
-			dsts.push_back(dst);
+			denoise(srcs[i], dsts[i]);
 		}
 	}
 };
