@@ -23,7 +23,7 @@ pair<float,float> coverage(vector<Point2f> borderPoints, Mat salientImg1f);
 
 pair<float,float> coverage(vector<Point2f> borderPoints, Mat salientImg1f){
 
-	if(countNonZero(salientImg1f)<0.2*salientImg1f.cols*salientImg1f.rows)
+	if(countNonZero(salientImg1f)<0.1*salientImg1f.cols*salientImg1f.rows)
 		return make_pair(0,0);
 
 	Mat borderImg = Mat::zeros(salientImg1f.size(), CV_8UC1);

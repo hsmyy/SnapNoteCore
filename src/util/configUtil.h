@@ -18,6 +18,7 @@
 #include <string>
 #include <fstream>
 #include <map>
+#include <vector>
 using namespace std;
 class Config {
 private:
