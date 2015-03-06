@@ -84,17 +84,17 @@ void getAng(double a, double b, double c, double& db) {
 	db = acos((a * a + b * b - c * c) / (2 * a * b));
 }
 
-int countSmall(double ang0, double ang1, double ang2, double ang3) {
+int countAcuteAngle(double ang0, double ang1, double ang2, double ang3, double thresh= 6 * CV_PI / 18) {
 
 	//60 is too small...70 is ok!
 	int ret = 0;
-	if (ang0 < 6 * CV_PI / 18)
+	if (ang0 < thresh)
 		ret++;
-	if (ang1 < 6 * CV_PI / 18)
+	if (ang1 < thresh)
 		ret++;
-	if (ang2 < 6 * CV_PI / 18)
+	if (ang2 < thresh)
 		ret++;
-	if (ang3 < 6 * CV_PI / 18)
+	if (ang3 < thresh)
 		ret++;
 	return ret;
 }
@@ -120,25 +120,29 @@ int compareSpaceScore(const void * a, const void * b) {
 }
 
 int compareFinalScore(const void * a, const void * b) {
+	double weight = 3;
 	//return 0;
 	int ai = *(int*) a;
 	int bi = *(int*) b;
 
-	int scorea = spaceRankDic[ai] * angleRankDic[ai];
-	int scoreb = spaceRankDic[bi] * angleRankDic[bi];
+	double scorea = spaceRankDic[ai] * (1.0+tAnglScore[topRank[ai]]);
+	double scoreb = spaceRankDic[bi] * (1.0+tAnglScore[topRank[bi]]);
 
-	return scorea - scoreb;
+	if(scorea<scoreb) return -1;
+	if(scorea>scoreb) return 1;
+	return 0;
 }
 
 int compareTopScore(const void * a, const void * b) {
 	int ai = *(int*) a;
 	int bi = *(int*) b;
+	//Currently nonsense
+//	if (tAreaScore[ai] < tAreaScore[bi])
+//		return 1;
+//	if (tAreaScore[ai] > tAreaScore[bi])
+//		return -1;
 
-	if (tAreaScore[ai] < tAreaScore[bi])
-		return 1;
-	if (tAreaScore[ai] > tAreaScore[bi])
-		return -1;
-
+	//only compare line scores
 	if (tLineScore[ai] < tLineScore[bi])
 		return 1;
 	if (tLineScore[ai] > tLineScore[bi])
@@ -372,7 +376,6 @@ bool isLine(cv::Mat& mat, double& linkScore, double& linkSpace, cv::Point pt1,
 
 			maxLink = std::max(maxLink, link);
 			link = 0;
-
 		} else {
 			maxSpace = std::max(maxSpace, space);
 			space = 0;
@@ -494,30 +497,35 @@ int calcAreaScore(float p, float r) {
 	return fvi;
 }
 
-int myAngleScore(double a1, double a2, double a3, double a4) {
-
-	double ang[4];
-	ang[0] = a1;
-	ang[1] = a2;
-	ang[2] = a3;
-	ang[3] = a4;
-
-	for (int i = 0; i < 4; i++) {
-		for (int j = i + 1; j < 4; j++) {
-			if (ang[i] < ang[j]) {
-				double swap = ang[i];
-				ang[i] = ang[j];
-				ang[j] = swap;
-			}
-		}
-	}
-
-	return 1
-			+ ((int) ((max(fabs(ang[0] - ang[1]), fabs(ang[2] - ang[3])) * 36
-					/ CV_PI)));
+double angleToVert(double angle){
+	if(angle>=0&&angle<=CV_PI/2+0.0001)
+		return angle;
+	if(angle>CV_PI/2&&angle<=CV_PI*3/2+0.0001)
+		return fabs(CV_PI-angle);
+	return 2*CV_PI - angle;
 }
 
-bool doubtShape(vector<cv::Point2f> corners, Mat slt) {
+double angleToHori(double angle){
+	return fabs(CV_PI/2 -angleToVert(angle));
+}
+
+double myAngleScore(vector<double> lineAngles, double a1, double a2, double a3, double a4) {
+
+	double ZEROTHRESH = CV_PI/36;
+	if(angleToHori(lineAngles[0])<ZEROTHRESH&&angleToHori(lineAngles[1])<ZEROTHRESH){
+		if(angleToVert(lineAngles[2])<ZEROTHRESH&&angleToVert(lineAngles[3])<ZEROTHRESH)
+			return 0.0;
+		else
+			return fabs(angleToVert(lineAngles[2])-angleToVert(lineAngles[3]));
+	}
+
+	if(angleToVert(lineAngles[2])<ZEROTHRESH&&angleToVert(lineAngles[3])<ZEROTHRESH)
+		return fabs(angleToHori(lineAngles[0])-angleToHori(lineAngles[1]));
+
+	return fabs(angleToVert(lineAngles[2])-angleToVert(lineAngles[3]))+fabs(angleToHori(lineAngles[0])-angleToHori(lineAngles[1]))+fabs(angleToHori(lineAngles[0]));
+}
+
+bool doubtShape(vector<double> lineAngles, vector<cv::Point2f> corners, Mat slt, bool binary) {
 
 	double d01;
 	distance(corners[0], corners[1], d01);
@@ -576,28 +584,55 @@ bool doubtShape(vector<cv::Point2f> corners, Mat slt) {
 		return true;
 	}
 
-	int smallCount = countSmall(ang0, ang1, ang2, ang3);
-	if (smallCount == 1) {
+	int acuteCount = countAcuteAngle(ang0, ang1, ang2, ang3);
+	if (acuteCount == 1) {
 		//reason = "R7"+angs;
 		return true;
 	}
 
-	pair<float, float> pr = coverage(corners, slt);
+	double HORITHRESH = CV_PI/18;
+	if(fabs(angleToHori(lineAngles[0])-angleToHori(lineAngles[1]))>HORITHRESH)
+		return true;
+
+//	HORITHRESH = CV_PI/36;
+//	double ACUTETHRESH = CV_PI/2;
+//
+//	if(fabs(angleToHori(lineAngles[0])-angleToHori(lineAngles[1]))<HORITHRESH&&(ang0<ACUTETHRESH&&ang2<ACUTETHRESH||ang1<ACUTETHRESH&&ang3<ACUTETHRESH))
+//		return true;
+
+	pair<float, float> pr = binary?coverage(corners, slt):pair<float,float>(1,1);
 //	cout<<"PR "<<pr.first<<" "<<pr.second<<endl;
 	//
 	//	if(pr.first>0&&pr.first<0.9) return true;
-	if (pr.first > 0.9 && pr.second > 0 && pr.second < 0.7) {
+	double areascore = calcAreaScore(pr.first,pr.second);
+//	if(binary) cout<<"areascore: "<<areascore<<endl;
+	if(binary&&(areascore<0.7||pr.first<=0.85||pr.second<0.85))
+		return true;
+
+	if (binary&&pr.first > 0.9 && pr.second > 0 && pr.second < 0.7) {
 		return true;
 	}
 	if (pr.first > 0.85 && pr.second > 0.85)
-		doubt = true;
+		doubt = true;//TODO it is nonsense to force to run different light modes! it should be false logically
 	//reason = "";
-	anglScore[curphase][scoreCur[curphase]] = myAngleScore(ang0, ang1, ang2,
+	anglScore[curphase][scoreCur[curphase]] = myAngleScore(lineAngles, ang0, ang1, ang2,
 			ang3);
 
-	areaScore[curphase][scoreCur[curphase]] = calcAreaScore(pr.first,
-			pr.second);
+	areaScore[curphase][scoreCur[curphase]] = areascore;
 	spaceScore[curphase][scoreCur[curphase]] = (d01 + d12 + d23 + d30);
+	return false;
+}
+
+bool isVertLine(double ang){
+	if(ang>=0&&ang<=CV_PI/4) return true;
+	if(ang>=CV_PI*3/4&&ang<=CV_PI*5/4) return true;
+	if(ang>=CV_PI*7/4&&ang<=CV_PI*2) return true;
+	return false;
+}
+
+bool isHoriLine(double ang){
+	if(ang>=CV_PI/4&&ang<=CV_PI*3/4) return true;
+	if(ang>=CV_PI*5/4&&ang<=CV_PI*7/4) return true;
 	return false;
 }
 
@@ -644,7 +679,7 @@ convertToPolar(std::vector<cv::Vec4i> lines0, CvMemStorage* storage,
 		MAXLINK = 10;	//20;
 		double linkScore = 0.0;
 		double linkSpace = 0.0;
-		if (isLine(pic1, linkScore, linkSpace,
+		if ((isHoriLine(line.angle)||isVertLine(line.angle))&&isLine(pic1, linkScore, linkSpace,
 				cv::Point(lines0[i][0], lines0[i][1]),
 				cv::Point(lines0[i][2], lines0[i][3]), 2, 1, 1, 0, true)) {
 
@@ -1192,9 +1227,9 @@ void turnImage(Mat& src, Mat& turned, vector<Point2f> corners, double scale) {
 }
 
 void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses,
-		priority_queue<quadrNode>& qn, vector<OppositeLines> opplineVector,
+		priority_queue<quadrNode>& qn, vector<OppositeLines> horiPairs, vector<OppositeLines> vertPairs,
 		bool binary) {
-	//output it
+
 	std::vector<cv::Point2f> corners;
 //	cout<<"size "<<src.cols<<" "<<src.rows<<endl;
 //	cout<<"qn size "<<qn.size()<<endl;
@@ -1203,7 +1238,7 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses,
 
 	vector<quadrNode> top10;
 
-	for (int i = 0; qn.size() > 0 && (i < 20 || qn.top().score > mscore / 3);
+	for (int i = 0; qn.size() > 0 && (binary? i<3:(i < 20 || qn.top().score > mscore / 3));
 			i++) {
 		top10.push_back(qn.top());
 		qn.pop();
@@ -1221,7 +1256,7 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses,
 
 		Mat dist = src.clone();
 		CvLinePolar2* line = (CvLinePolar2*) cvGetSeqElem(lines,
-				opplineVector[finalK].one);
+				horiPairs[finalK].one);
 		float rho = line->rho, theta = line->angle;
 		cv::Point pt1, pt2;
 		double a = cos(theta), b = sin(theta);
@@ -1234,11 +1269,13 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses,
 		finalines[0][1] = pt1.y;
 		finalines[0][2] = pt2.x;
 		finalines[0][3] = pt2.y;
+		vector<double> lineAngles;
+		lineAngles.push_back(line->angle);
 		//cv::line( dist, pt1, pt2, CV_RGB(0,255,0),4);double areaScore[3][30];
 
 		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
 
-		line = (CvLinePolar2*) cvGetSeqElem(lines, opplineVector[finalK].two);
+		line = (CvLinePolar2*) cvGetSeqElem(lines, horiPairs[finalK].two);
 		rho = line->rho;
 		theta = line->angle;
 		a = cos(theta);
@@ -1253,11 +1290,12 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses,
 		finalines[1][1] = pt1.y;
 		finalines[1][2] = pt2.x;
 		finalines[1][3] = pt2.y;
+		lineAngles.push_back(line->angle);
 		//cv::line( dist, pt1, pt2, CV_RGB(0,255,0),4);
 
 		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
 
-		line = (CvLinePolar2*) cvGetSeqElem(lines, opplineVector[finalL].one);
+		line = (CvLinePolar2*) cvGetSeqElem(lines, vertPairs[finalL].one);
 		rho = line->rho;
 		theta = line->angle;
 		a = cos(theta);
@@ -1272,11 +1310,12 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses,
 		finalines[2][1] = pt1.y;
 		finalines[2][2] = pt2.x;
 		finalines[2][3] = pt2.y;
+		lineAngles.push_back(line->angle);
 		//cv::line( dist, pt1, pt2, CV_RGB(0,255,0),4);
 
 		//std::cout<<"line "<<line->angle<<" "<<line->rho<<std::endl;
 
-		line = (CvLinePolar2*) cvGetSeqElem(lines, opplineVector[finalL].two);
+		line = (CvLinePolar2*) cvGetSeqElem(lines, vertPairs[finalL].two);
 		rho = line->rho;
 		theta = line->angle;
 		a = cos(theta);
@@ -1291,6 +1330,7 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses,
 		finalines[3][1] = pt1.y;
 		finalines[3][2] = pt2.x;
 		finalines[3][3] = pt2.y;
+		lineAngles.push_back(line->angle);
 		//cv::line( dist, pt1, pt2, CV_RGB(0,255,0),4);
 
 		for (int i = 0; i < finalines.size(); i++) {
@@ -1342,7 +1382,7 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses,
 
 		string myreason;
 
-		bool doubtThis = binary ? false : doubtShape(corners, slt);
+		bool doubtThis = doubtShape(lineAngles,corners, slt, binary);//binary ? false : doubtShape(corners, slt);
 		if (doubtThis)
 			doubtCount++;
 
@@ -1386,13 +1426,6 @@ void showResult(Mat& src, Mat& slt, vector<vector<cv::Point2f> >& crosses,
 		///cross = dst.clone();
 		///turned = quad.clone();
 	}
-
-//	cout<<"DoubtCount "<<doubtCount<<endl;
-	if (doubtCount > 0.4 * (int) top10.size() || top10.size() < 10)
-		;	//doubt = true;
-	//cv::imshow("imageF", dst);
-	//cv::imshow("quadrilateral", quad);
-	//waitKey();
 }
 
 double lighting = 110.0;
@@ -1474,19 +1507,6 @@ int process(cv::Mat tsrc, Mat tslt, int procMode,
 			pt2.y = line->y2;	//cvRound(y0 - 1000*(a));
 			cv::Mat pic11 = pic1.clone();
 			fakeLines[i] = 1;
-			/*  if(binary){
-			 cv::line( pic11, pt1, pt2, CV_RGB(255,255,255),6);
-
-			 std::cout<<"LINE "<<i<<": "<<line->score<<" "<<line->rho<<" "<<line->angle<<std::endl;
-
-			 Size sz = Size(pic11.cols*3/5,pic11.rows*3/5);
-			 Mat pic3 = Mat(sz,CV_32S);
-			 cv::resize(pic11, pic3, sz);
-			 cv::imshow("image", pic3);
-			 //cv::imshow("image", pic11);
-			 cv::waitKey();
-			 }
-			 */
 
 		} else {
 			if (procMode == 1 && i < 31)
@@ -1502,8 +1522,8 @@ int process(cv::Mat tsrc, Mat tslt, int procMode,
 	if (procMode < 3 && cut > 1000)
 		cut = 1000;
 
-	std::vector<OppositeLines> opplineVector;
-	std::vector<int> lines2;
+	vector<OppositeLines> horiPairs;
+	vector<OppositeLines> vertPairs;
 
 	int width = grad.cols;
 	int height = grad.rows;
@@ -1550,72 +1570,15 @@ int process(cv::Mat tsrc, Mat tslt, int procMode,
 				OppositeLines oppLines;
 				oppLines.one = lineSorted[i];
 				oppLines.two = lineSorted[j];
-				/**/
-//				if(i==0&&j==2)
-//					std::cout<<"carrot: "<<opplineVector.size()<<std::endl;
-				if (std::find(lines2.begin(), lines2.end(), i) == lines2.end())
-					lines2.push_back(i);
 
-				if (std::find(lines2.begin(), lines2.end(), j) == lines2.end())
-					lines2.push_back(j);
-
-				opplineVector.push_back(oppLines);
+				if(isHoriLine(l1->angle)&&isHoriLine(l2->angle))
+					horiPairs.push_back(oppLines);
+				if(isVertLine(l1->angle)&&isVertLine(l2->angle))
+					vertPairs.push_back(oppLines);
 			}
 
 		}
 	}
-
-	std::cout << "opposite pair " << opplineVector.size() << std::endl;
-	int vecsize = opplineVector.size() > 500 ? 500 : opplineVector.size();
-	/*
-	 if(binary)
-	 for(int s=0;s<opplineVector.size();s++){
-	 cv::Mat pic2 = pic1.clone();
-	 CvLinePolar2* line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[s].one);
-	 float rho = line->rho, theta = line->angle;
-	 cv::Point pt1, pt2;
-	 double a = cos(theta), b = sin(theta);
-	 double x0 = a*rho, y0 = b*rho;
-	 pt1.x = cvRound(x0 + 1000*(-b));
-	 pt1.y = cvRound(y0 + 1000*(a));
-	 pt2.x = cvRound(x0 - 1000*(-b));
-	 pt2.y = cvRound(y0 - 1000*(a));
-	 cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),2);
-
-	 //if(pt2.x!=pt1.x)
-	 //	drawInnerBorder(pic2,(0.0+pt2.y-pt1.y)/(0.0+pt2.x-pt1.x),pt1.x,pt1.y);
-	 //else{
-	 //	pt1.y = 0;
-	 //	pt2.y = pic2.rows;
-	 //	cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),6);
-	 //}
-
-
-	 line = (CvLinePolar2*)cvGetSeqElem(lines,opplineVector[s].two);
-	 rho = line->rho;
-	 theta = line->angle;
-	 a = cos(theta);
-	 b = sin(theta);
-	 x0 = a*rho;
-	 y0 = b*rho;
-	 pt1.x = cvRound(x0 + 1000*(-b));
-	 pt1.y = cvRound(y0 + 1000*(a));
-	 pt2.x = cvRound(x0 - 1000*(-b));
-	 pt2.y = cvRound(y0 - 1000*(a));
-	 cv::line( pic2, pt1, pt2, CV_RGB(255,255,255),2);
-	 //drawInnerBorder(pic2,(0.0+pt2.y-pt1.y)/(0.0+pt2.x-pt1.x),pt1.x,pt1.y);
-	 //Size sz = Size(pic2.cols/3,pic2.rows/3);
-	 //Mat pic3 = Mat(sz,CV_32S);
-	 //resize(pic2, pic3, sz);
-
-	 std::cout<<"s,one,two "<<s<<" "<<opplineVector[s].one<<" "<<opplineVector[s].two<<std::endl;
-	 //if(fabs(line->angle-CV_PI/2)<CV_PI/6){
-	 cv::imshow("image", pic2);
-	 cv::waitKey();
-	 //}
-
-	 }
-	 */
 
 	std::vector<Quadrangle> quadVector;
 	int finalK = -1;
@@ -1624,14 +1587,12 @@ int process(cv::Mat tsrc, Mat tslt, int procMode,
 	double minDistToM = 9999;
 	double minAngleSum = 9999;
 	double maxScore = -1;
-	int vecsize1 = 120;
-	int vecsize2 = vecsize;
 	int lStart = 0;
 
 	priority_queue<quadrNode> qn;
 
-	for (int k = 0; k < vecsize1 && k < opplineVector.size(); k++) {
-		OppositeLines pair1 = opplineVector.at(k);
+	for (int k = 0; k<100&&k<horiPairs.size(); k++) {
+		OppositeLines pair1 = horiPairs.at(k);
 		CvLinePolar2 *clines[4];
 		clines[0] = (CvLinePolar2*) cvGetSeqElem(lines, pair1.one);
 		clines[1] = (CvLinePolar2*) cvGetSeqElem(lines, pair1.two);
@@ -1647,18 +1608,9 @@ int process(cv::Mat tsrc, Mat tslt, int procMode,
 			xylines[m][3] = cvRound(y0 - 1000 * (a));
 		}
 
-		for (int l = max(k + 1, lStart);
-				l < vecsize2 && l < opplineVector.size(); l++) {
+		for (int l=0;l<100&&l<vertPairs.size();l++) {
 
-			//cout<<"KL: "<<k<<" "<<l<<endl;
-			if (finalK < 0 && finalL < 0 && l == vecsize2 - 1
-					&& k == vecsize1 - 2) {
-				//cout<<"BIGBIG"<<endl;
-				lStart = vecsize2;
-				vecsize2 += 150;
-				k = 0;
-			}
-			OppositeLines pair2 = opplineVector.at(l);
+			OppositeLines pair2 = vertPairs.at(l);
 			if (pair1.one == pair2.one || pair1.one == pair2.two
 					|| pair1.two == pair2.one || pair1.two == pair2.two)
 				continue;
@@ -1829,23 +1781,13 @@ int process(cv::Mat tsrc, Mat tslt, int procMode,
 					minDistToM = distToM;
 					maxScore = score;
 				}
-				/*
-				 if((k==11&&l==20||k==32&&l==251||k==38&&l==49))
-				 {
-				 cout<<"rhos "<<rho0<<" "<<rho1<<" "<<rho2<<" "<<rho3<<endl;
-				 cout<<"angles "<<clines[0]->angle<<" "<<clines[1]->angle<<" "<<clines[2]->angle<<" "<<clines[3]->angle<<endl;
-				 cout<<"thetas "<<theta0<<" "<<theta1<<" "<<theta2<<" "<<theta3<<endl;
-				 std::cout<<maxScore<<" "<<score<<" "<<angleSum<<" "<<distToM<<" "<<circ<<" "<<k<<" "<<l<<" "<<finalK<<" "<<finalL<<std::endl;
-				 }*/
 			}
 		}
 	}
-	/**/
 
 	if (finalK >= 0 && finalL >= 0) {
-//		std::cout<<"final "<<finalK<<" "<<finalL<<std::endl;
 
-		showResult(tsrc, tslt, cross, qn, opplineVector, binary);
+		showResult(tsrc, tslt, cross, qn, horiPairs, vertPairs, binary);
 
 		return 0;
 	}
@@ -1854,6 +1796,11 @@ int process(cv::Mat tsrc, Mat tslt, int procMode,
 }
 
 int procBinary(Mat orig, Mat src, int procMode, Mat& cross, Mat& turned) {
+
+	//too small salient, bad!
+	if(10*countNonZero(src)<src.cols*src.rows)
+		return -1;
+
 	vector<vector<Point2f> > crosses;
 	Mat tsrc, torig;
 	myNormalSize(orig, torig, CV_32S);
@@ -1872,7 +1819,7 @@ int procBinary(Mat orig, Mat src, int procMode, Mat& cross, Mat& turned) {
 	} else {
 		cross = orig;                //Mat::zeros(src.rows,src.cols,CV_32SC3);
 		turned = orig;
-		Mat::zeros(src.rows, src.cols, CV_32SC3);
+//		Mat::zeros(src.rows, src.cols, CV_32SC3);
 		return -1;
 	}
 }
@@ -1964,7 +1911,7 @@ int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross, Mat& turned) {
 
 		vector<cv::Point2f> corners;
 
-		if (tAreaScore[topRank[0]] > 0) {
+		if (tAreaScore[topRank[0]] > 2) {
 			corners = crosses[topRank[0]];
 		} else {
 			for (int i = 0; i < 30; i++) {
@@ -1972,13 +1919,14 @@ int mainProc(cv::Mat src, Mat slt, int procMode, Mat& cross, Mat& turned) {
 				spaceRank[i] = i;
 				angleRank[i] = i;
 			}
-
+			//logic is finalscore = spacerank + anglerank!
 			qsort(spaceRank, min(30, (int) crosses.size()), sizeof(int),
 					compareSpaceScore);
 			qsort(angleRank, min(30, (int) crosses.size()), sizeof(int),
 					compareAngleScore);
 
 			for (int i = 0; i < 30 && i < crosses.size(); i++) {
+				//INDEX To RANK
 				spaceRankDic[spaceRank[i]] = i;
 				angleRankDic[angleRank[i]] = i;
 			}

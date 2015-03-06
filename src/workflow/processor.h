@@ -150,9 +150,9 @@ public:
 		src.salient(img, outputSRC, seg);
 		Mat outputFileSRC = convertToVisibleMat<float>(outputSRC);
 
-		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
+		int res = procBinary(img, outputSRC, 0, crossBD, outputBD);
 		if (res == -1) {
-			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
+			res = mainProc(img, outputSRC, 0, crossBD, outputBD);
 		}
 
 		normalize(outputBD, outputBD, 0, 255, NORM_MINMAX);
@@ -233,9 +233,9 @@ public:
 		imwrite(salientOutPath, outputFileSRC);
 		//cout<<outputSRC(Rect(0, 0, 500, 500))<<endl;
 
-		int res = mainProc(img, outputSRC, 0, crossBD, outputBD);
+		int res = procBinary(img, outputSRC, 0, crossBD, outputBD);
 		if (res == -1) {
-			res = procBinary(img, outputSRC, 0, crossBD, outputBD);
+			res = mainProc(img, outputSRC, 0, crossBD, outputBD);
 		}
 
 		string borderOutPath = borderOut + "/" + FileUtil::getFileName(input);
